@@ -41,34 +41,32 @@ public class LabStatusPanel : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = taskManager.HasThemeSelection
-                ? $"LabZero VR  |  {taskManager.GetThemeDisplayName()}"
-                : "LabZero VR  |  Theme Hub";
+            titleText.text = "Briefing Sicurezza Magazzino";
         }
 
         if (instructionText != null)
         {
-            instructionText.text = taskManager.GetInstructionText();
+            instructionText.text = taskManager.GetObjectiveText();
         }
 
         if (ppeStatusText != null)
         {
-            ppeStatusText.text = $"PPE: {taskManager.PpeCount}/{taskManager.PpeRequired}";
+            ppeStatusText.text = $"Timer: {taskManager.GetTimerSummaryText()}";
         }
 
         if (toolStatusText != null)
         {
-            toolStatusText.text = $"Bench Setup: {taskManager.ToolCount}/{taskManager.ToolRequired}";
+            toolStatusText.text = $"Overlay errori: {taskManager.GetErrorOverlayStateText()}";
         }
 
         if (hazardStatusText != null)
         {
-            hazardStatusText.text = $"Hazard Check: {taskManager.HazardCount}/{taskManager.HazardRequired}";
+            hazardStatusText.text = $"Aiuti: {taskManager.GetHelpersStateText()}";
         }
 
         if (summaryText != null)
         {
-            summaryText.text = taskManager.GetSummaryText();
+            summaryText.text = $"Modalita: {taskManager.GetRunModeText()} | Stato lobby: {taskManager.GetLobbyStatusText()}";
             summaryText.color = taskManager.GetSummaryColor();
         }
 

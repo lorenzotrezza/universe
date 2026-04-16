@@ -1,17 +1,33 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 [RequireComponent(typeof(Collider))]
 public class LabDeskCommandPad : MonoBehaviour
 {
+    private const float HoverDurationSeconds = 0.12f; // 120ms hover/aim response
+    private const float PressDurationSeconds = 0.08f; // 80ms press response
+    private const float CtaPressLockSeconds = 0.30f; // 300ms CTA press lock
+    private const float DisabledBrightnessFactor = 0.40f; // 40% brightness at timer bounds
+    private const float HoverLiftAmount = 0.01f;
+    private const float PressDipAmount = 0.01f;
+
     [SerializeField] private LabTaskManager taskManager;
     [SerializeField] private LabDeskCommandType commandType;
     [SerializeField] private Renderer targetRenderer;
     [SerializeField] private TMP_Text label;
-    [SerializeField] private Color idleColor = new(0.3f, 0.5f, 0.8f, 1f);
-    [SerializeField] private Color activeColor = Color.white;
+    [SerializeField] private XRSimpleInteractable xrInteractable;
+    [SerializeField] private Color idleColor = new(0.12f, 0.18f, 0.24f, 1f);
+    [SerializeField] private Color activeColor = new(0.95f, 0.66f, 0.05f, 1f);
 
     private Material _runtimeMaterial;
+    private Vector3 _baseLocalPosition;
+    private Color _baseVisualColor;
+    private float _hoverUntil;
+    private float _pressUntil;
+    private float _ctaLockedUntil;
+    private bool _hovered;
 
     public void Configure(
         LabTaskManager manager,
@@ -27,7 +43,9 @@ public class LabDeskCommandPad : MonoBehaviour
         label = textLabel;
         idleColor = baseColor;
         activeColor = selectedColor;
+
         CacheRuntimeMaterial();
+        _baseLocalPosition = transform.localPosition;
         RefreshVisual();
     }
 
@@ -35,7 +53,10 @@ public class LabDeskCommandPad : MonoBehaviour
     {
         taskManager ??= Object.FindAnyObjectByType<LabTaskManager>();
         targetRenderer ??= GetComponent<Renderer>();
+        xrInteractable ??= GetComponent<XRSimpleInteractable>();
+        xrInteractable ??= gameObject.AddComponent<XRSimpleInteractable>();
         CacheRuntimeMaterial();
+        _baseLocalPosition = transform.localPosition;
     }
 
     private void OnEnable()
@@ -43,6 +64,11 @@ public class LabDeskCommandPad : MonoBehaviour
         if (taskManager != null)
         {
             taskManager.StateChanged += RefreshVisual;
+        }
+
+        if (xrInteractable != null)
+        {
+            xrInteractable.selectEntered.AddListener(OnXrSelectEntered);
         }
 
         RefreshVisual();
@@ -54,42 +80,90 @@ public class LabDeskCommandPad : MonoBehaviour
         {
             taskManager.StateChanged -= RefreshVisual;
         }
+
+        if (xrInteractable != null)
+        {
+            xrInteractable.selectEntered.RemoveListener(OnXrSelectEntered);
+        }
     }
 
-    private void OnMouseDown()
+    private void OnMouseEnter()
     {
-        ExecuteCommand();
-    }
-
-    private void ExecuteCommand()
-    {
-        if (taskManager == null)
+        if (IsDisabledCommand())
         {
             return;
         }
 
+        _hovered = true;
+        _hoverUntil = Time.unscaledTime + HoverDurationSeconds;
+    }
+
+    private void OnMouseExit()
+    {
+        _hovered = false;
+    }
+
+    private void OnMouseDown()
+    {
+        Activate();
+    }
+
+    private void OnXrSelectEntered(SelectEnterEventArgs args)
+    {
+        Activate();
+    }
+
+    private void Update()
+    {
+        UpdateFeedback();
+    }
+
+    public void Activate()
+    {
+        if (taskManager == null || IsDisabledCommand())
+        {
+            return;
+        }
+
+        var now = Time.unscaledTime;
+        if (commandType == LabDeskCommandType.StartTraining && now < _ctaLockedUntil)
+        {
+            return;
+        }
+
+        ExecuteCommand();
+
+        _pressUntil = now + PressDurationSeconds;
+        if (commandType == LabDeskCommandType.StartTraining)
+        {
+            _ctaLockedUntil = now + CtaPressLockSeconds;
+        }
+    }
+
+    private void ExecuteCommand()
+    {
         switch (commandType)
         {
-            case LabDeskCommandType.SelectEnglish:
-                taskManager.SelectTheme(LabThemeType.EnglishCommunication);
+            case LabDeskCommandType.TimerDown:
+                taskManager.AdjustTimer(-1);
                 break;
-            case LabDeskCommandType.SelectMath:
-                taskManager.SelectTheme(LabThemeType.BasicMathematics);
+            case LabDeskCommandType.TimerUp:
+                taskManager.AdjustTimer(1);
                 break;
-            case LabDeskCommandType.SelectDigital:
-                taskManager.SelectTheme(LabThemeType.DigitalSkills);
+            case LabDeskCommandType.ToggleErrorOverlay:
+                taskManager.ToggleErrorOverlay();
                 break;
-            case LabDeskCommandType.TogglePlayPause:
-                taskManager.TogglePlayPause();
+            case LabDeskCommandType.ToggleHelpers:
+                taskManager.ToggleHelpers();
                 break;
-            case LabDeskCommandType.NextModule:
-                taskManager.AdvanceLessonChunk();
+            case LabDeskCommandType.ToggleMode:
+                taskManager.ToggleRunMode();
                 break;
-            case LabDeskCommandType.PreviousModule:
-                taskManager.RewindLessonChunk();
+            case LabDeskCommandType.StartTraining:
+                taskManager.StartConfiguredRun();
                 break;
-            case LabDeskCommandType.ResetCourse:
-                taskManager.ClearThemeSelection();
+            case LabDeskCommandType.ResetLobby:
+                taskManager.ResetLobbyConfiguration();
                 break;
         }
     }
@@ -102,11 +176,15 @@ public class LabDeskCommandPad : MonoBehaviour
         }
 
         var selected = IsCommandActive();
-        _runtimeMaterial.color = selected ? activeColor : idleColor;
-        if (label != null)
+        var baseColor = selected ? activeColor : idleColor;
+        if (IsDisabledCommand())
         {
-            label.color = selected ? Color.black : Color.white;
+            baseColor *= DisabledBrightnessFactor;
+            baseColor.a = 1f;
         }
+
+        _baseVisualColor = baseColor;
+        ApplyVisual(baseColor);
     }
 
     private bool IsCommandActive()
@@ -118,16 +196,70 @@ public class LabDeskCommandPad : MonoBehaviour
 
         switch (commandType)
         {
-            case LabDeskCommandType.SelectEnglish:
-                return taskManager.SelectedTheme == LabThemeType.EnglishCommunication;
-            case LabDeskCommandType.SelectMath:
-                return taskManager.SelectedTheme == LabThemeType.BasicMathematics;
-            case LabDeskCommandType.SelectDigital:
-                return taskManager.SelectedTheme == LabThemeType.DigitalSkills;
-            case LabDeskCommandType.TogglePlayPause:
-                return taskManager.IsPlaying;
+            case LabDeskCommandType.ToggleErrorOverlay:
+                return taskManager.ShowErrorOverlay;
+            case LabDeskCommandType.ToggleHelpers:
+                return taskManager.HelpersEnabled;
+            case LabDeskCommandType.ToggleMode:
+                return taskManager.RunMode == LabRunModeType.Live;
+            case LabDeskCommandType.StartTraining:
+                return taskManager.RunConfigured;
             default:
                 return false;
+        }
+    }
+
+    private bool IsDisabledCommand()
+    {
+        if (taskManager == null)
+        {
+            return false;
+        }
+
+        return commandType switch
+        {
+            LabDeskCommandType.TimerDown => taskManager.TimerMinutes <= LabTaskManager.MinimumTimerMinutes,
+            LabDeskCommandType.TimerUp => taskManager.TimerMinutes >= LabTaskManager.MaximumTimerMinutes,
+            _ => false,
+        };
+    }
+
+    private void UpdateFeedback()
+    {
+        if (_runtimeMaterial == null)
+        {
+            return;
+        }
+
+        var now = Time.unscaledTime;
+        var isPressed = now < _pressUntil;
+        var canHover = !IsDisabledCommand() && (_hovered || now < _hoverUntil);
+        var hoverFactor = canHover ? 1f : 0f;
+        var pressFactor = isPressed ? 1f : 0f;
+
+        var offset = Vector3.up * (hoverFactor * HoverLiftAmount - pressFactor * PressDipAmount);
+        transform.localPosition = _baseLocalPosition + offset;
+
+        var color = _baseVisualColor;
+        if (canHover)
+        {
+            color = Color.Lerp(color, Color.white, 0.18f);
+        }
+
+        if (isPressed)
+        {
+            color = Color.Lerp(color, Color.black, 0.12f);
+        }
+
+        ApplyVisual(color);
+    }
+
+    private void ApplyVisual(Color color)
+    {
+        _runtimeMaterial.color = color;
+        if (label != null)
+        {
+            label.color = IsCommandActive() ? Color.black : Color.white;
         }
     }
 
@@ -142,11 +274,11 @@ public class LabDeskCommandPad : MonoBehaviour
 
 public enum LabDeskCommandType
 {
-    SelectEnglish = 0,
-    SelectMath = 1,
-    SelectDigital = 2,
-    TogglePlayPause = 3,
-    NextModule = 4,
-    PreviousModule = 5,
-    ResetCourse = 6,
+    TimerDown = 0,
+    TimerUp = 1,
+    ToggleErrorOverlay = 2,
+    ToggleHelpers = 3,
+    ToggleMode = 4,
+    StartTraining = 5,
+    ResetLobby = 6,
 }

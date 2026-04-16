@@ -5,6 +5,22 @@ using UnityEngine.InputSystem.Controls;
 
 public class LabDebugHotkeys : MonoBehaviour
 {
+    // Material-inspired palette: #101820, #1F2A36, #F2A900.
+    private static readonly Color32 ColorSurfaceDark = new(0x10, 0x18, 0x20, 0xFF);
+    private static readonly Color32 ColorSurfaceRaised = new(0x1F, 0x2A, 0x36, 0xFF);
+    private static readonly Color32 ColorAccentAmber = new(0xF2, 0xA9, 0x00, 0xFF);
+
+    private static readonly Vector3 PreviewStartPosition = new(0f, 1.18f, 0.28f);
+    private static readonly Vector3 PreviewLookAt = new(0f, 1.72f, 2.98f);
+
+    // UI-SPEC asks for 20-24mm rounded treatment; we approximate with layered plates.
+    private const float RoundedPlateRadiusMetersMin = 0.02f;
+    private const float RoundedPlateRadiusMetersMax = 0.024f;
+    private const float ScreenWidthMeters = 2.8f;
+    private const float ScreenHeightMeters = 1.6f;
+    private const float PadGapHorizontal = 0.06f;
+    private const float PadGapVertical = 0.10f;
+
     [SerializeField] private LabTaskManager taskManager;
 
     [Header("Desktop Movement")]
@@ -15,19 +31,16 @@ public class LabDebugHotkeys : MonoBehaviour
     [Header("Desktop Preview Setup")]
     [SerializeField] private bool forceDesktopPreviewInEditor = true;
 
-    [Header("Learning Desk Runtime Build")]
+    [Header("Lobby Runtime Build")]
     [SerializeField] private bool rebuildLearningDeskOnPlay = true;
 
     private bool _deskBuilt;
     private bool _previewReady;
 
-    private static readonly Vector3 PreviewStartPosition = new(0f, 1.18f, 0.28f);
-    private static readonly Vector3 PreviewLookAt = new(0f, 1.72f, 2.98f);
-
     private void Awake()
     {
         taskManager ??= Object.FindAnyObjectByType<LabTaskManager>();
-        BuildLearningDesk(rebuildLearningDeskOnPlay);
+        BuildLobbyDesk(rebuildLearningDeskOnPlay);
 
 #if UNITY_EDITOR
         if (forceDesktopPreviewInEditor)
@@ -53,45 +66,49 @@ public class LabDebugHotkeys : MonoBehaviour
         }
 
         HandleDesktopMovement(keyboard);
+        HandleLobbyKeys(keyboard);
+    }
 
+    private void HandleLobbyKeys(Keyboard keyboard)
+    {
         if (taskManager == null)
         {
             return;
         }
 
-        if (WasPressedThisFrame(keyboard.digit1Key, keyboard.numpad1Key))
+        if (WasPressedThisFrame(keyboard.minusKey, keyboard.numpadMinusKey))
         {
-            taskManager.SelectTheme(LabThemeType.EnglishCommunication);
+            taskManager.AdjustTimer(-1);
         }
 
-        if (WasPressedThisFrame(keyboard.digit2Key, keyboard.numpad2Key))
+        if (WasPressedThisFrame(keyboard.equalsKey, keyboard.numpadPlusKey))
         {
-            taskManager.SelectTheme(LabThemeType.BasicMathematics);
+            taskManager.AdjustTimer(1);
         }
 
-        if (WasPressedThisFrame(keyboard.digit3Key, keyboard.numpad3Key))
+        if (keyboard.oKey.wasPressedThisFrame)
         {
-            taskManager.SelectTheme(LabThemeType.DigitalSkills);
+            taskManager.ToggleErrorOverlay();
         }
 
-        if (keyboard.spaceKey.wasPressedThisFrame)
+        if (keyboard.hKey.wasPressedThisFrame)
         {
-            taskManager.TogglePlayPause();
+            taskManager.ToggleHelpers();
         }
 
-        if (keyboard.nKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame)
+        if (keyboard.mKey.wasPressedThisFrame)
         {
-            taskManager.AdvanceLessonChunk();
+            taskManager.ToggleRunMode();
         }
 
-        if (keyboard.bKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame)
+        if (keyboard.enterKey.wasPressedThisFrame)
         {
-            taskManager.RewindLessonChunk();
+            taskManager.StartConfiguredRun();
         }
 
-        if (keyboard.rKey.wasPressedThisFrame || keyboard.tKey.wasPressedThisFrame)
+        if (keyboard.rKey.wasPressedThisFrame)
         {
-            taskManager.ClearThemeSelection();
+            taskManager.ResetLobbyConfiguration();
         }
     }
 
@@ -106,8 +123,7 @@ public class LabDebugHotkeys : MonoBehaviour
 
         SetInactiveIfFound("XRRig (Controllers + Hands)");
         SetInactiveIfFound("App Manager");
-        SetInactiveIfFound("XR Interaction Manager");
-        HideAllLegacyCanvases();
+        HideLegacyCanvasesExceptLobby();
 
         var desktopCamera = EnsureDesktopCamera();
         if (desktopCamera != null)
@@ -118,7 +134,7 @@ public class LabDebugHotkeys : MonoBehaviour
         }
     }
 
-    private void BuildLearningDesk(bool rebuildFromScratch)
+    private void BuildLobbyDesk(bool rebuildFromScratch)
     {
         if (_deskBuilt)
         {
@@ -144,11 +160,11 @@ public class LabDebugHotkeys : MonoBehaviour
         var root = new GameObject("LearningDesk_Root").transform;
         CreateRoom(root);
         var deskTop = CreateDeskAndSeat(root);
-        var screen = CreateFloatingScreen(root);
-        CreateCommandPads(root, deskTop);
+        var briefingScreen = CreateBriefingScreen(root);
+        CreateLobbyPads(root, deskTop);
         AddDeskLighting(root);
 
-        var presenter = screen.gameObject.AddComponent<LabDeskScreenPresenter>();
+        var presenter = briefingScreen.gameObject.AddComponent<LabDeskScreenPresenter>();
         presenter.Configure(taskManager);
     }
 
@@ -170,9 +186,24 @@ public class LabDebugHotkeys : MonoBehaviour
         return cameraGo.GetComponent<Camera>();
     }
 
-    private static void HideAllLegacyCanvases()
+    private static bool IsUnderLearningDeskRoot(Transform current)
     {
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+        while (current != null)
+        {
+            if (current.name == "LearningDesk_Root")
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private static void HideLegacyCanvasesExceptLobby()
+    {
+        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var canvas in canvases)
         {
             if (canvas == null)
@@ -180,7 +211,11 @@ public class LabDebugHotkeys : MonoBehaviour
                 continue;
             }
 
-            canvas.gameObject.SetActive(false);
+            var keep = canvas.name == "Lab Status Canvas" || IsUnderLearningDeskRoot(canvas.transform);
+            if (!keep)
+            {
+                canvas.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -196,7 +231,7 @@ public class LabDebugHotkeys : MonoBehaviour
                     continue;
                 }
 
-                var keep = child.name == "Lab Task Manager" || child.name == "Lab Debug Hotkeys";
+                var keep = child.name == "Lab Task Manager" || child.name == "Lab Debug Hotkeys" || child.name == "Lab Status Canvas";
                 child.gameObject.SetActive(keep);
             }
         }
@@ -205,8 +240,7 @@ public class LabDebugHotkeys : MonoBehaviour
         SetInactiveIfFound("Sci-Fi Table");
         SetInactiveIfFound("Floor Shadow Effect");
         SetInactiveIfFound("Directional Light");
-        SetInactiveIfFound("Lab Status Canvas");
-        HideAllLegacyCanvases();
+        HideLegacyCanvasesExceptLobby();
     }
 
     private static void SetInactiveIfFound(string name)
@@ -220,88 +254,123 @@ public class LabDebugHotkeys : MonoBehaviour
 
     private static void CreateRoom(Transform root)
     {
-        CreateBlock("Room Floor", root, new Vector3(0f, -0.05f, 1.5f), new Vector3(7f, 0.1f, 7f), new Color(0.13f, 0.14f, 0.16f));
-        CreateBlock("Room Ceiling", root, new Vector3(0f, 3.1f, 1.5f), new Vector3(7f, 0.1f, 7f), new Color(0.16f, 0.17f, 0.19f));
-        CreateBlock("Room BackWall", root, new Vector3(0f, 1.5f, 4.95f), new Vector3(7f, 3f, 0.1f), new Color(0.18f, 0.19f, 0.22f));
-        CreateBlock("Room FrontWall", root, new Vector3(0f, 1.5f, -1.95f), new Vector3(7f, 3f, 0.1f), new Color(0.18f, 0.19f, 0.22f));
-        CreateBlock("Room LeftWall", root, new Vector3(-3.45f, 1.5f, 1.5f), new Vector3(0.1f, 3f, 7f), new Color(0.16f, 0.17f, 0.2f));
-        CreateBlock("Room RightWall", root, new Vector3(3.45f, 1.5f, 1.5f), new Vector3(0.1f, 3f, 7f), new Color(0.16f, 0.17f, 0.2f));
+        CreateBlock("Room Floor", root, new Vector3(0f, -0.05f, 1.5f), new Vector3(7f, 0.1f, 7f), ColorSurfaceDark);
+        CreateBlock("Room Ceiling", root, new Vector3(0f, 3.1f, 1.5f), new Vector3(7f, 0.1f, 7f), ColorSurfaceRaised);
+        CreateBlock("Room BackWall", root, new Vector3(0f, 1.5f, 4.95f), new Vector3(7f, 3f, 0.1f), ColorSurfaceRaised);
+        CreateBlock("Room FrontWall", root, new Vector3(0f, 1.5f, -1.95f), new Vector3(7f, 3f, 0.1f), ColorSurfaceRaised);
+        CreateBlock("Room LeftWall", root, new Vector3(-3.45f, 1.5f, 1.5f), new Vector3(0.1f, 3f, 7f), ColorSurfaceRaised);
+        CreateBlock("Room RightWall", root, new Vector3(3.45f, 1.5f, 1.5f), new Vector3(0.1f, 3f, 7f), ColorSurfaceRaised);
     }
 
     private static Transform CreateDeskAndSeat(Transform root)
     {
-        var deskTop = CreateBlock("Desk Top", root, new Vector3(0f, 0.82f, 1.4f), new Vector3(2.2f, 0.08f, 1.05f), new Color(0.28f, 0.23f, 0.19f));
-        CreateBlock("Desk Leg A", root, new Vector3(-0.95f, 0.4f, 0.98f), new Vector3(0.1f, 0.8f, 0.1f), new Color(0.2f, 0.2f, 0.22f));
-        CreateBlock("Desk Leg B", root, new Vector3(0.95f, 0.4f, 0.98f), new Vector3(0.1f, 0.8f, 0.1f), new Color(0.2f, 0.2f, 0.22f));
-        CreateBlock("Desk Leg C", root, new Vector3(-0.95f, 0.4f, 1.82f), new Vector3(0.1f, 0.8f, 0.1f), new Color(0.2f, 0.2f, 0.22f));
-        CreateBlock("Desk Leg D", root, new Vector3(0.95f, 0.4f, 1.82f), new Vector3(0.1f, 0.8f, 0.1f), new Color(0.2f, 0.2f, 0.22f));
-
-        CreateBlock("Seat Base", root, new Vector3(0f, 0.45f, 0.35f), new Vector3(0.62f, 0.08f, 0.62f), new Color(0.24f, 0.24f, 0.27f));
-        CreateBlock("Seat Back", root, new Vector3(0f, 0.78f, 0.1f), new Vector3(0.62f, 0.62f, 0.08f), new Color(0.24f, 0.24f, 0.27f));
+        var deskTop = CreateBlock("Desk Top", root, new Vector3(0f, 0.82f, 1.4f), new Vector3(2.4f, 0.08f, 1.2f), ColorSurfaceRaised);
+        CreateBlock("Desk Shadow", root, new Vector3(0f, 0.78f, 1.4f), new Vector3(2.46f, 0.02f, 1.24f), ColorSurfaceDark);
+        CreateBlock("Seat Base", root, new Vector3(0f, 0.45f, 0.35f), new Vector3(0.62f, 0.08f, 0.62f), ColorSurfaceRaised);
+        CreateBlock("Seat Back", root, new Vector3(0f, 0.78f, 0.1f), new Vector3(0.62f, 0.62f, 0.08f), ColorSurfaceRaised);
 
         return deskTop;
     }
 
-    private static Transform CreateFloatingScreen(Transform root)
+    private Transform CreateBriefingScreen(Transform root)
     {
-        var frame = CreateBlock("Screen Frame", root, new Vector3(0f, 1.75f, 3.02f), new Vector3(2.95f, 1.75f, 0.08f), new Color(0.2f, 0.22f, 0.26f));
-        var panel = CreateBlock("Screen Panel", root, new Vector3(0f, 1.75f, 2.97f), new Vector3(2.78f, 1.6f, 0.02f), new Color(0.08f, 0.1f, 0.14f));
+        var frame = CreateBlock(
+            "Screen Frame",
+            root,
+            new Vector3(0f, 1.75f, 3.02f),
+            new Vector3(ScreenWidthMeters + 0.16f, ScreenHeightMeters + 0.14f, 0.08f),
+            ColorSurfaceRaised);
 
-        var videoPlaceholder = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        videoPlaceholder.name = "Screen Video Placeholder";
-        videoPlaceholder.transform.SetParent(panel);
-        videoPlaceholder.transform.localPosition = new Vector3(0f, 0.04f, -0.9f);
-        videoPlaceholder.transform.localRotation = Quaternion.identity;
-        videoPlaceholder.transform.localScale = new Vector3(0.78f, 0.55f, 0.15f);
-        videoPlaceholder.GetComponent<Renderer>().sharedMaterial = CreateMaterial("screen_video_placeholder_mat", new Color(0.11f, 0.14f, 0.2f));
+        var panel = CreateBlock(
+            "Screen Panel",
+            root,
+            new Vector3(0f, 1.75f, 2.97f),
+            new Vector3(ScreenWidthMeters, ScreenHeightMeters, 0.02f),
+            ColorSurfaceDark);
 
-        var title = CreateText("Screen Course Title", panel, new Vector3(0f, 0.58f, -2.25f), 6.6f, "Select a Course", 7.2f, 0.9f);
-        title.alignment = TextAlignmentOptions.Center;
-        title.color = new Color(0.8f, 0.92f, 1f);
+        CreateText("Screen Scenario Title", panel, new Vector3(0f, 0.56f, -2.0f), 6.2f, "Briefing Sicurezza Magazzino", 8f, 1f);
+        CreateText("Screen Objective", panel, new Vector3(0f, 0.30f, -2.0f), 3.2f, "Configura la sessione prima di entrare nell'area operativa.", 8.5f, 1f);
+        CreateText("Screen Settings Heading", panel, new Vector3(0f, 0.06f, -2.0f), 3.3f, "Impostazioni sessione", 8f, 1f);
+        CreateText("Screen Timer Row", panel, new Vector3(-0.62f, -0.15f, -2.0f), 2.8f, "Timer: 7 min", 3.8f, 0.6f, TextAlignmentOptions.Left);
+        CreateText("Screen Overlay Row", panel, new Vector3(-0.62f, -0.30f, -2.0f), 2.8f, "Overlay errori: Nascosta", 3.8f, 0.6f, TextAlignmentOptions.Left);
+        CreateText("Screen Helpers Row", panel, new Vector3(-0.62f, -0.45f, -2.0f), 2.8f, "Aiuti: Attivi", 3.8f, 0.6f, TextAlignmentOptions.Left);
+        CreateText("Screen Mode Row", panel, new Vector3(-0.62f, -0.60f, -2.0f), 2.8f, "Modalita: Simulazione", 3.8f, 0.6f, TextAlignmentOptions.Left);
+        CreateText("Screen Cta Line", panel, new Vector3(0f, -0.74f, -2.0f), 2.4f, "Quando sei pronto, premi Avvia Addestramento.", 8f, 0.8f);
 
-        var module = CreateText("Screen Module Title", panel, new Vector3(0f, -0.06f, -2.25f), 4.4f, "Module Placeholder", 7.4f, 1.2f);
-        module.alignment = TextAlignmentOptions.Center;
-        module.color = Color.white;
+        var timerChip = CreateBlock("Timer Value Chip", panel, new Vector3(0.86f, -0.15f, -1.95f), new Vector3(0.62f, 0.11f, 0.08f), ColorSurfaceRaised);
+        CreateText("Timer Value Chip Label", timerChip, Vector3.zero, 2.5f, "7 min", 2f, 0.6f);
 
-        var url = CreateText("Screen Video Url", panel, new Vector3(0f, -0.36f, -2.25f), 2.7f, "video-placeholder.local/module", 7.4f, 0.8f);
-        url.alignment = TextAlignmentOptions.Center;
-        url.color = new Color(0.62f, 0.95f, 0.88f);
+        var errorOverlayPanel = CreateBlock("Error Overlay Panel", panel, new Vector3(1.08f, -0.42f, -1.9f), new Vector3(0.88f, 0.5f, 0.1f), ColorSurfaceRaised);
+        CreateText("Error Overlay Title", errorOverlayPanel, new Vector3(0f, 0.10f, -0.7f), 2.6f, "Errori", 2.4f, 0.6f);
+        CreateText("Error Overlay State", errorOverlayPanel, new Vector3(0f, -0.08f, -0.7f), 2.3f, "Visibilita overlay: Nascosta", 3.2f, 0.6f);
+        errorOverlayPanel.gameObject.SetActive(taskManager != null && taskManager.ShowErrorOverlay);
 
-        var hint = CreateText("Screen Controls Hint", panel, new Vector3(0f, -0.64f, -2.25f), 2.25f, "Buttons on desk or keys: 1/2/3, SPACE, N, B", 8f, 0.7f);
-        hint.alignment = TextAlignmentOptions.Center;
-        hint.color = new Color(0.86f, 0.87f, 0.9f);
+        frame.GetComponent<Renderer>().sharedMaterial = CreateMaterial("screen_frame_mat", ColorSurfaceRaised);
+        panel.GetComponent<Renderer>().sharedMaterial = CreateMaterial("screen_panel_mat", ColorSurfaceDark);
 
         return panel;
     }
 
-    private void CreateCommandPads(Transform root, Transform deskTop)
+    private void CreateLobbyPads(Transform root, Transform deskTop)
     {
-        CreateCommandPad(root, deskTop, "Pad Course 1", "English", new Vector3(-0.55f, 0.87f, 1.12f), new Color(0.21f, 0.65f, 1f), LabDeskCommandType.SelectEnglish);
-        CreateCommandPad(root, deskTop, "Pad Course 2", "Math", new Vector3(0f, 0.87f, 1.12f), new Color(0.32f, 0.83f, 0.45f), LabDeskCommandType.SelectMath);
-        CreateCommandPad(root, deskTop, "Pad Course 3", "Digital", new Vector3(0.55f, 0.87f, 1.12f), new Color(0.96f, 0.72f, 0.2f), LabDeskCommandType.SelectDigital);
+        var standardScale = new Vector3(0.28f, 0.04f, 0.20f);
+        var ctaScale = new Vector3(0.56f, 0.05f, 0.22f);
 
-        CreateCommandPad(root, deskTop, "Pad Prev", "Prev", new Vector3(-0.34f, 0.87f, 1.55f), new Color(0.55f, 0.55f, 0.7f), LabDeskCommandType.PreviousModule);
-        CreateCommandPad(root, deskTop, "Pad PlayPause", "Play/Pause", new Vector3(0f, 0.87f, 1.55f), new Color(0.82f, 0.35f, 0.92f), LabDeskCommandType.TogglePlayPause);
-        CreateCommandPad(root, deskTop, "Pad Next", "Next", new Vector3(0.34f, 0.87f, 1.55f), new Color(0.96f, 0.5f, 0.5f), LabDeskCommandType.NextModule);
+        var firstRowY = 0.88f;
+        var secondRowY = firstRowY + PadGapVertical + standardScale.y;
+        var baseZ = 1.18f;
+
+        var left = -standardScale.x - (PadGapHorizontal * 0.5f);
+        var center = 0f;
+        var right = standardScale.x + (PadGapHorizontal * 0.5f);
+
+        CreateLobbyPad(root, "Pad Timer Minus", "Timer -", new Vector3(left, firstRowY, baseZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.TimerDown);
+        CreateLobbyPad(root, "Pad Timer Plus", "Timer +", new Vector3(center, firstRowY, baseZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.TimerUp);
+        CreateLobbyPad(root, "Pad Overlay Errori", "Overlay Errori", new Vector3(right, firstRowY, baseZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.ToggleErrorOverlay);
+
+        CreateLobbyPad(root, "Pad Aiuti", "Aiuti", new Vector3(left, secondRowY, baseZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.ToggleHelpers);
+        CreateLobbyPad(root, "Pad Modalita", "Modalita", new Vector3(center, secondRowY, baseZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.ToggleMode);
+        CreateLobbyPad(root, "Pad Start Training", "Avvia Addestramento", new Vector3(right, secondRowY, baseZ), ctaScale, ColorAccentAmber, LabDeskCommandType.StartTraining);
+
+        var resetPadPosition = new Vector3(0f, secondRowY + PadGapVertical + standardScale.y, baseZ);
+        CreateLobbyPad(root, "Pad Reset Lobby", "Reset", resetPadPosition, standardScale, ColorSurfaceRaised, LabDeskCommandType.ResetLobby);
     }
 
-    private void CreateCommandPad(Transform root, Transform deskTop, string name, string labelText, Vector3 position, Color color, LabDeskCommandType command)
+    private void CreateLobbyPad(
+        Transform root,
+        string name,
+        string labelText,
+        Vector3 position,
+        Vector3 scale,
+        Color color,
+        LabDeskCommandType command)
     {
         var pad = GameObject.CreatePrimitive(PrimitiveType.Cube);
         pad.name = name;
         pad.transform.SetParent(root);
         pad.transform.position = position;
-        pad.transform.localScale = new Vector3(0.28f, 0.03f, 0.2f);
+        pad.transform.localScale = scale;
 
-        var renderer = pad.GetComponent<Renderer>();
-        renderer.sharedMaterial = CreateMaterial(name + "_mat", color);
+        var shadow = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        shadow.name = name + " Shadow";
+        shadow.transform.SetParent(pad.transform);
+        shadow.transform.localPosition = new Vector3(0f, -0.017f, 0f);
+        shadow.transform.localScale = new Vector3(scale.x + RoundedPlateRadiusMetersMin, 0.01f, scale.z + RoundedPlateRadiusMetersMax);
+        shadow.GetComponent<Renderer>().sharedMaterial = CreateMaterial(name + "_shadow_mat", ColorSurfaceDark);
 
-        var label = CreateText(name + "_Label", pad.transform, new Vector3(0f, 0.04f, 0f), 2.2f, labelText);
-        label.alignment = TextAlignmentOptions.Center;
+        var topPlate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        topPlate.name = name + " Top";
+        topPlate.transform.SetParent(pad.transform);
+        topPlate.transform.localPosition = new Vector3(0f, 0.013f, 0f);
+        topPlate.transform.localScale = new Vector3(scale.x - RoundedPlateRadiusMetersMin, 0.01f, scale.z - RoundedPlateRadiusMetersMin);
+        topPlate.GetComponent<Renderer>().sharedMaterial = CreateMaterial(name + "_top_mat", color);
+
+        var renderer = topPlate.GetComponent<Renderer>();
+        var label = CreateText(name + "_Label", topPlate.transform, new Vector3(0f, 0.045f, 0f), 2.2f, labelText, 3.2f, 0.6f);
         label.color = Color.white;
 
-        var commandPad = pad.AddComponent<LabDeskCommandPad>();
-        commandPad.Configure(taskManager, command, renderer, label, color, Color.white);
+        var commandPad = topPlate.AddComponent<LabDeskCommandPad>();
+        commandPad.Configure(taskManager, command, renderer, label, color, ColorAccentAmber);
     }
 
     private static void AddDeskLighting(Transform root)
@@ -312,8 +381,8 @@ public class LabDebugHotkeys : MonoBehaviour
         var light = lamp.AddComponent<Light>();
         light.type = LightType.Point;
         light.range = 9f;
-        light.intensity = 2.4f;
-        light.color = new Color(1f, 0.95f, 0.88f);
+        light.intensity = 2.8f;
+        light.color = ColorAccentAmber;
     }
 
     private static Transform CreateBlock(string name, Transform parent, Vector3 position, Vector3 scale, Color color)
@@ -335,9 +404,11 @@ public class LabDebugHotkeys : MonoBehaviour
             shader = Shader.Find("Standard");
         }
 
-        var material = new Material(shader);
-        material.name = name;
-        material.color = color;
+        var material = new Material(shader)
+        {
+            name = name,
+            color = color,
+        };
         return material;
     }
 
@@ -348,7 +419,8 @@ public class LabDebugHotkeys : MonoBehaviour
         float fontSize,
         string text,
         float rectWidth = 6f,
-        float rectHeight = 1f)
+        float rectHeight = 1f,
+        TextAlignmentOptions alignment = TextAlignmentOptions.Center)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent);
@@ -359,7 +431,7 @@ public class LabDebugHotkeys : MonoBehaviour
         var tmp = go.AddComponent<TextMeshPro>();
         tmp.text = text;
         tmp.fontSize = fontSize;
-        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.alignment = alignment;
         tmp.enableWordWrapping = true;
         tmp.overflowMode = TextOverflowModes.Truncate;
         tmp.rectTransform.sizeDelta = new Vector2(rectWidth, rectHeight);
@@ -382,8 +454,8 @@ public class LabDebugHotkeys : MonoBehaviour
         if (keyboard.sKey.isPressed) move -= forward;
         if (keyboard.aKey.isPressed) move -= right;
         if (keyboard.dKey.isPressed) move += right;
-        if (keyboard.iKey.isPressed || keyboard.pageUpKey.isPressed) move += Vector3.up;
-        if (keyboard.kKey.isPressed || keyboard.pageDownKey.isPressed) move += Vector3.down;
+        if (keyboard.iKey.isPressed) move += Vector3.up;
+        if (keyboard.kKey.isPressed) move += Vector3.down;
 
         if (move.sqrMagnitude > 0.0001f)
         {
@@ -393,7 +465,7 @@ public class LabDebugHotkeys : MonoBehaviour
         var turn = 0f;
         if (keyboard.qKey.isPressed || keyboard.leftArrowKey.isPressed) turn -= 1f;
         if (keyboard.eKey.isPressed || keyboard.rightArrowKey.isPressed) turn += 1f;
-        if (Mathf.Abs(turn) > 0.001f)
+        if (turn > 0.001f || turn < -0.001f)
         {
             rigRoot.Rotate(Vector3.up, turn * turnSpeed * Time.deltaTime, Space.World);
         }

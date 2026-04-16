@@ -116,14 +116,14 @@ public static class LabZeroBootstrapperEditor
         rectTransform.sizeDelta = new Vector2(900f, 520f);
 
         var panel = CreateUiPanel("Panel", canvasObject.transform, new Vector2(900f, 520f), new Color(0.02f, 0.04f, 0.08f, 0.62f));
-        title = CreateUiText("Title", panel.transform, "LabZero VR", 54, FontStyles.Bold, new Vector2(0f, -55f));
-        instruction = CreateUiText("Instruction", panel.transform, "Choose theme: 1 Cell Biology  2 Quantum Lab  3 AI Safety", 26, FontStyles.Normal, new Vector2(0f, -135f));
-        ppe = CreateUiText("PPE Status", panel.transform, "PPE: 0/3", 32, FontStyles.Normal, new Vector2(0f, -240f));
-        tools = CreateUiText("Tool Status", panel.transform, "Bench Setup: 0/3", 32, FontStyles.Normal, new Vector2(0f, -295f));
-        hazard = CreateUiText("Hazard Status", panel.transform, "Hazard Check: 0/1", 32, FontStyles.Normal, new Vector2(0f, -350f));
-        summary = CreateUiText("Summary", panel.transform, "Theme Required", 38, FontStyles.Bold, new Vector2(0f, -435f));
+        title = CreateUiText("Title", panel.transform, "Briefing Sicurezza Magazzino", 54, FontStyles.Bold, new Vector2(0f, -55f));
+        instruction = CreateUiText("Instruction", panel.transform, "Configura la sessione prima di entrare nell'area operativa.", 26, FontStyles.Normal, new Vector2(0f, -135f));
+        ppe = CreateUiText("PPE Status", panel.transform, "Timer: 7 min", 32, FontStyles.Normal, new Vector2(0f, -240f));
+        tools = CreateUiText("Tool Status", panel.transform, "Overlay errori: Nascosta", 32, FontStyles.Normal, new Vector2(0f, -295f));
+        hazard = CreateUiText("Hazard Status", panel.transform, "Aiuti: Attivi", 32, FontStyles.Normal, new Vector2(0f, -350f));
+        summary = CreateUiText("Summary", panel.transform, "Modalita: Simulazione | Stato lobby: Lobby pronta", 30, FontStyles.Bold, new Vector2(0f, -435f));
         summary.color = new Color(0.45f, 0.8f, 1f);
-        debugHint = CreateUiText("Debug Hint", panel.transform, "Move: WASD + Q/E | Tasks: Z/X/C | SPACE start lesson | R reset | T change theme", 20, FontStyles.Italic, new Vector2(0f, -490f));
+        debugHint = CreateUiText("Debug Hint", panel.transform, "Timer: -/+ | Overlay: O | Aiuti: H | Modalita: M | Avvia: INVIO | Reset: R | Movimento: WASD, Q/E, I/K", 20, FontStyles.Italic, new Vector2(0f, -490f));
         debugHint.color = new Color(0.7f, 0.85f, 1f);
 
         return canvasObject;

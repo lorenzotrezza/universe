@@ -4,10 +4,17 @@ using UnityEngine;
 public class LabDeskScreenPresenter : MonoBehaviour
 {
     [SerializeField] private LabTaskManager taskManager;
-    [SerializeField] private TMP_Text courseTitleText;
-    [SerializeField] private TMP_Text moduleTitleText;
-    [SerializeField] private TMP_Text videoPlaceholderText;
-    [SerializeField] private TMP_Text controlsHintText;
+    [SerializeField] private TMP_Text scenarioTitleText;
+    [SerializeField] private TMP_Text objectiveText;
+    [SerializeField] private TMP_Text settingsHeadingText;
+    [SerializeField] private TMP_Text timerText;
+    [SerializeField] private TMP_Text overlayText;
+    [SerializeField] private TMP_Text helpersText;
+    [SerializeField] private TMP_Text modeText;
+    [SerializeField] private TMP_Text ctaText;
+    [SerializeField] private GameObject errorOverlayPanel;
+    [SerializeField] private TMP_Text errorOverlayTitleText;
+    [SerializeField] private TMP_Text errorOverlayStateText;
 
     public void Configure(LabTaskManager manager)
     {
@@ -47,45 +54,91 @@ public class LabDeskScreenPresenter : MonoBehaviour
             return;
         }
 
-        if (courseTitleText != null)
+        if (scenarioTitleText != null)
         {
-            courseTitleText.text = taskManager.HasThemeSelection
-                ? taskManager.GetThemeDisplayName()
-                : "Select a Course";
+            scenarioTitleText.text = taskManager.GetScenarioTitle();
         }
 
-        if (moduleTitleText != null)
+        if (objectiveText != null)
         {
-            moduleTitleText.text = taskManager.GetCurrentModuleTitle();
+            objectiveText.text = taskManager.GetObjectiveText();
         }
 
-        if (videoPlaceholderText != null)
+        if (settingsHeadingText != null)
         {
-            videoPlaceholderText.text = "Video Source: " + taskManager.GetCurrentVideoPlaceholderUrl();
+            settingsHeadingText.text = "Impostazioni sessione";
         }
 
-        if (controlsHintText != null)
+        if (timerText != null)
         {
-            controlsHintText.text = taskManager.GetInstructionText();
+            timerText.text = $"Timer: {taskManager.GetTimerSummaryText()}";
+        }
+
+        if (overlayText != null)
+        {
+            overlayText.text = $"Overlay errori: {taskManager.GetErrorOverlayStateText()}";
+        }
+
+        if (helpersText != null)
+        {
+            helpersText.text = $"Aiuti: {taskManager.GetHelpersStateText()}";
+        }
+
+        if (modeText != null)
+        {
+            modeText.text = $"Modalita: {taskManager.GetRunModeText()}";
+        }
+
+        if (ctaText != null)
+        {
+            ctaText.text = taskManager.GetStartPromptText();
+        }
+
+        if (errorOverlayTitleText != null)
+        {
+            errorOverlayTitleText.text = "Errori";
+        }
+
+        if (errorOverlayStateText != null)
+        {
+            errorOverlayStateText.text = $"Visibilita overlay: {taskManager.GetErrorOverlayStateText()}";
+        }
+
+        if (errorOverlayPanel != null)
+        {
+            errorOverlayPanel.SetActive(taskManager.ShowErrorOverlay);
         }
     }
 
     private void AutoBindTexts()
     {
-        courseTitleText ??= FindText("Screen Course Title");
-        moduleTitleText ??= FindText("Screen Module Title");
-        videoPlaceholderText ??= FindText("Screen Video Url");
-        controlsHintText ??= FindText("Screen Controls Hint");
+        scenarioTitleText ??= FindText("Screen Scenario Title");
+        objectiveText ??= FindText("Screen Objective");
+        settingsHeadingText ??= FindText("Screen Settings Heading");
+        timerText ??= FindText("Screen Timer Row");
+        overlayText ??= FindText("Screen Overlay Row");
+        helpersText ??= FindText("Screen Helpers Row");
+        modeText ??= FindText("Screen Mode Row");
+        ctaText ??= FindText("Screen Cta Line");
+        errorOverlayPanel ??= FindGameObject("Error Overlay Panel");
+        errorOverlayTitleText ??= FindText("Error Overlay Title");
+        errorOverlayStateText ??= FindText("Error Overlay State");
     }
 
     private TMP_Text FindText(string name)
     {
-        var t = transform.Find(name);
-        if (t == null)
+        var child = transform.Find(name);
+        if (child == null)
         {
             return null;
         }
 
-        return t.GetComponent<TMP_Text>();
+        return child.GetComponent<TMP_Text>();
+    }
+
+    private GameObject FindGameObject(string name)
+    {
+        var child = transform.Find(name);
+        return child != null ? child.gameObject : null;
     }
 }
