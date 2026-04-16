@@ -18,9 +18,6 @@ public class LabTaskManager : MonoBehaviour
     [SerializeField] private bool helpersEnabled = true;
     [SerializeField] private LabRunModeType runMode = LabRunModeType.Simulation;
 
-    // Compatibility state kept until Plan 03 removes the old callers.
-    [SerializeField] private LabThemeType selectedTheme = LabThemeType.None;
-
     private bool _runConfigured;
 
     public const int MinimumTimerMinutes = 5;
@@ -34,27 +31,6 @@ public class LabTaskManager : MonoBehaviour
     public LabRunModeType RunMode => runMode;
     public bool RunConfigured => _runConfigured;
 
-    // Compatibility with existing scene bindings.
-    public int PpeCount { get; private set; }
-    public int ToolCount { get; private set; }
-    public int HazardCount { get; private set; }
-    public int PpeRequired => 1;
-    public int ToolRequired => 1;
-    public int HazardRequired => 1;
-
-    public bool HasThemeSelection => _runConfigured;
-    public bool PpeComplete => _runConfigured;
-    public bool ToolComplete => _runConfigured;
-    public bool HazardComplete => _runConfigured;
-    public bool AllTasksComplete => _runConfigured;
-
-    public LabThemeType SelectedTheme => selectedTheme;
-    public bool LessonStarted => _runConfigured;
-    public bool LessonContentComplete => _runConfigured;
-    public bool IsPlaying => _runConfigured;
-    public int LessonChunkIndex => 0;
-    public int LessonChunkCount => 1;
-
     private void Start()
     {
         RefreshUi();
@@ -62,7 +38,10 @@ public class LabTaskManager : MonoBehaviour
 
     public void AdjustTimer(int deltaMinutes)
     {
-        var clamped = Mathf.Clamp(timerMinutes + deltaMinutes, MinimumTimerMinutes, MaximumTimerMinutes);
+        var next = timerMinutes + deltaMinutes;
+        var clamped = next < MinimumTimerMinutes
+            ? MinimumTimerMinutes
+            : (next > MaximumTimerMinutes ? MaximumTimerMinutes : next);
         if (clamped == timerMinutes)
         {
             return;
@@ -137,55 +116,10 @@ public class LabTaskManager : MonoBehaviour
             changed = true;
         }
 
-        if (selectedTheme != LabThemeType.None)
-        {
-            selectedTheme = LabThemeType.None;
-            changed = true;
-        }
-
         if (changed)
         {
             NotifyStateChanged();
         }
-    }
-
-    // Compatibility wrappers for existing callers until Plan 03.
-    public void SelectTheme(LabThemeType themeType)
-    {
-        selectedTheme = themeType;
-        if (themeType == LabThemeType.None)
-        {
-            ResetLobbyConfiguration();
-            return;
-        }
-
-        StartConfiguredRun();
-    }
-
-    public void ClearThemeSelection()
-    {
-        selectedTheme = LabThemeType.None;
-        ResetLobbyConfiguration();
-    }
-
-    public void TryStartLesson()
-    {
-        StartConfiguredRun();
-    }
-
-    public void TogglePlayPause()
-    {
-        ToggleHelpers();
-    }
-
-    public void AdvanceLessonChunk()
-    {
-        AdjustTimer(1);
-    }
-
-    public void RewindLessonChunk()
-    {
-        AdjustTimer(-1);
     }
 
     public void RegisterValidDrop(LabTaskType taskType)
@@ -199,14 +133,6 @@ public class LabTaskManager : MonoBehaviour
     public void CompleteTaskForDebug(LabTaskType taskType)
     {
         RegisterValidDrop(taskType);
-    }
-
-    public void ResetProgress()
-    {
-        PpeCount = 0;
-        ToolCount = 0;
-        HazardCount = 0;
-        ResetLobbyConfiguration();
     }
 
     public string GetScenarioTitle()
@@ -249,26 +175,6 @@ public class LabTaskManager : MonoBehaviour
         return RunConfigured
             ? "Preparazione sessione..."
             : "Quando sei pronto, premi Avvia Addestramento.";
-    }
-
-    public string GetThemeDisplayName()
-    {
-        return GetRunModeText();
-    }
-
-    public string GetCurrentModuleTitle()
-    {
-        return GetObjectiveText();
-    }
-
-    public string GetCurrentVideoPlaceholderUrl()
-    {
-        return "local://lobby-config";
-    }
-
-    public string GetInstructionText()
-    {
-        return GetObjectiveText();
     }
 
     public string GetSummaryText()
