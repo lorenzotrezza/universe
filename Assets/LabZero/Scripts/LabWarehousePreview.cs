@@ -8,6 +8,8 @@ public class LabWarehousePreview : MonoBehaviour
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float turnSpeed = 90f;
     [SerializeField] private float verticalSpeed = 2f;
+    [SerializeField] private float cameraHeight = 0.75f;
+    [SerializeField] private bool hideXrRigInEditor = true;
 
     private Camera _previewCamera;
     private bool _previewReady;
@@ -20,7 +22,21 @@ public class LabWarehousePreview : MonoBehaviour
             return;
         }
 
+        if (hideXrRigInEditor)
+        {
+            SetInactiveIfFound("XRRig (Controllers + Hands)");
+        }
+
         SetupPreviewCamera();
+    }
+
+    private static void SetInactiveIfFound(string objectName)
+    {
+        var go = GameObject.Find(objectName);
+        if (go != null)
+        {
+            go.SetActive(false);
+        }
     }
 
     private void SetupPreviewCamera()
@@ -37,8 +53,8 @@ public class LabWarehousePreview : MonoBehaviour
         _previewCamera.depth = 10f;
 
         var startPosition = spawnPoint != null
-            ? spawnPoint.position + Vector3.up * 1.6f
-            : transform.position + Vector3.up * 1.6f;
+            ? spawnPoint.position + Vector3.up * cameraHeight
+            : transform.position + Vector3.up * cameraHeight;
         var startRotation = spawnPoint != null
             ? spawnPoint.rotation
             : Quaternion.identity;
