@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 public class LabWarehousePreview : MonoBehaviour
 {
@@ -121,12 +120,12 @@ public class LabWarehousePreview : MonoBehaviour
     {
         if (keyboard.rKey.wasPressedThisFrame)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+            LabSceneTransition.RestartWarehouse();
         }
 
         if (keyboard.escapeKey.wasPressedThisFrame)
         {
-            SceneManager.LoadScene("LabZero_Prototype", LoadSceneMode.Single);
+            LabSceneTransition.ReturnToLobby();
         }
     }
 }

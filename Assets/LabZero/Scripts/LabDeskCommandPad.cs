@@ -161,6 +161,7 @@ public class LabDeskCommandPad : MonoBehaviour
                 break;
             case LabDeskCommandType.StartTraining:
                 taskManager.StartConfiguredRun();
+                LabSceneTransition.LoadWarehouse();
                 break;
             case LabDeskCommandType.ResetLobby:
                 taskManager.ResetLobbyConfiguration();

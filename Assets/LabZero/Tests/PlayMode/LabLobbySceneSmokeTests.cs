@@ -37,12 +37,12 @@ public class LabLobbySceneSmokeTests
         AssertTextExists("Briefing Sicurezza Magazzino");
         AssertTextExists("Configura la sessione prima di entrare nell'area operativa.");
 
-        Assert.IsNotNull(GameObject.Find("Pad Timer Minus"));
-        Assert.IsNotNull(GameObject.Find("Pad Timer Plus"));
-        Assert.IsNotNull(GameObject.Find("Pad Overlay Errori"));
-        Assert.IsNotNull(GameObject.Find("Pad Aiuti"));
-        Assert.IsNotNull(GameObject.Find("Pad Modalita"));
-        Assert.IsNotNull(GameObject.Find("Pad Start Training"));
+        Assert.IsNotNull(GameObject.Find("Pad Timer Minus Top"));
+        Assert.IsNotNull(GameObject.Find("Pad Timer Plus Top"));
+        Assert.IsNotNull(GameObject.Find("Pad Overlay Errori Top"));
+        Assert.IsNotNull(GameObject.Find("Pad Aiuti Top"));
+        Assert.IsNotNull(GameObject.Find("Pad Modalita Top"));
+        Assert.IsNotNull(GameObject.Find("Pad Start Training Top"));
         AssertTextExists("Avvia Addestramento");
     }
 
@@ -72,20 +72,17 @@ public class LabLobbySceneSmokeTests
         var initialOverlay = GetBoolProperty(manager, "ShowErrorOverlay");
         var initialHelpers = GetBoolProperty(manager, "HelpersEnabled");
         var initialMode = GetPropertyValue(manager, "RunMode")?.ToString();
-        var initialConfigured = GetBoolProperty(manager, "RunConfigured");
 
-        ActivatePad("Pad Timer Plus");
-        ActivatePad("Pad Overlay Errori");
-        ActivatePad("Pad Aiuti");
-        ActivatePad("Pad Modalita");
-        ActivatePad("Pad Start Training");
+        ActivatePad("Pad Timer Plus Top");
+        ActivatePad("Pad Overlay Errori Top");
+        ActivatePad("Pad Aiuti Top");
+        ActivatePad("Pad Modalita Top");
         yield return null;
 
         Assert.AreEqual(initialTimer + 1, GetIntProperty(manager, "TimerMinutes"));
         Assert.AreNotEqual(initialOverlay, GetBoolProperty(manager, "ShowErrorOverlay"));
         Assert.AreNotEqual(initialHelpers, GetBoolProperty(manager, "HelpersEnabled"));
         Assert.AreNotEqual(initialMode, GetPropertyValue(manager, "RunMode")?.ToString());
-        Assert.IsTrue(initialConfigured || GetBoolProperty(manager, "RunConfigured"));
 
         var text = GetVisibleText();
         Assert.IsTrue(text.Any(x => x.Contains("Timer", StringComparison.OrdinalIgnoreCase)));
@@ -102,12 +99,12 @@ public class LabLobbySceneSmokeTests
         var manager = FindManager();
         Assert.IsNotNull(manager, "LabTaskManager component not found.");
 
-        var panel = GameObject.Find("Error Overlay Panel");
+        var panel = FindSceneObjectIncludingInactive("Error Overlay Panel");
         Assert.IsNotNull(panel, "Error Overlay Panel not found.");
         Assert.IsFalse(GetBoolProperty(manager, "ShowErrorOverlay"));
         Assert.IsFalse(panel.activeInHierarchy);
 
-        ActivatePad("Pad Overlay Errori");
+        ActivatePad("Pad Overlay Errori Top");
         yield return null;
 
         Assert.IsTrue(GetBoolProperty(manager, "ShowErrorOverlay"));
@@ -116,11 +113,34 @@ public class LabLobbySceneSmokeTests
         AssertTextExists("Visibilita overlay");
     }
 
+    [UnityTest]
+    public IEnumerator LobbyStartTraining_LoadsWarehouseSceneWithRunningSession()
+    {
+        yield return LoadLobbyScene();
+
+        ActivatePad("Pad Start Training Top");
+        yield return null;
+        yield return null;
+
+        Assert.AreEqual("LabWarehouse", SceneManager.GetActiveScene().name);
+
+        var sessionManager = FindSessionManager();
+        Assert.IsNotNull(sessionManager, "LabSessionManager component not found.");
+        Assert.AreEqual("Running", GetPropertyValue(sessionManager, "RunState")?.ToString());
+        Assert.AreEqual(0, GetIntProperty(sessionManager, "MistakeCount"));
+    }
+
     private static IEnumerator LoadLobbyScene()
     {
         SceneManager.LoadScene("LabZero_Prototype");
-        yield return null;
-        yield return null;
+        for (var i = 0; i < 30; i++)
+        {
+            yield return null;
+            if (GameObject.Find("Pad Start Training Top") != null)
+            {
+                yield break;
+            }
+        }
     }
 
     private static Component FindManager()
@@ -128,6 +148,20 @@ public class LabLobbySceneSmokeTests
         var managerType = Type.GetType("LabTaskManager, Assembly-CSharp");
         Assert.IsNotNull(managerType, "LabTaskManager type was not found in Assembly-CSharp.");
         return UnityEngine.Object.FindAnyObjectByType(managerType) as Component;
+    }
+
+    private static Component FindSessionManager()
+    {
+        var managerType = Type.GetType("LabSessionManager, Assembly-CSharp");
+        Assert.IsNotNull(managerType, "LabSessionManager type was not found in Assembly-CSharp.");
+        return UnityEngine.Object.FindAnyObjectByType(managerType) as Component;
+    }
+
+    private static GameObject FindSceneObjectIncludingInactive(string objectName)
+    {
+        return Resources
+            .FindObjectsOfTypeAll<GameObject>()
+            .FirstOrDefault(go => go.name == objectName && go.scene.IsValid());
     }
 
     private static void ActivatePad(string padName)

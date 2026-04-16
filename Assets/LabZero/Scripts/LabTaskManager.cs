@@ -17,6 +17,7 @@ public class LabTaskManager : MonoBehaviour
     [SerializeField] private bool showErrorOverlay;
     [SerializeField] private bool helpersEnabled = true;
     [SerializeField] private LabRunModeType runMode = LabRunModeType.Simulation;
+    [SerializeField] private LabSessionSettings sessionSettings;
 
     private bool _runConfigured;
 
@@ -79,6 +80,7 @@ public class LabTaskManager : MonoBehaviour
         }
 
         _runConfigured = true;
+        ApplySessionSettings();
         NotifyStateChanged();
     }
 
@@ -198,6 +200,21 @@ public class LabTaskManager : MonoBehaviour
     {
         RefreshUi();
         StateChanged?.Invoke();
+    }
+
+    private void ApplySessionSettings()
+    {
+        if (sessionSettings == null)
+        {
+            return;
+        }
+
+        sessionSettings.TimerMinutes = timerMinutes;
+        sessionSettings.ShowErrorOverlay = showErrorOverlay;
+        sessionSettings.HelpersEnabled = helpersEnabled;
+        sessionSettings.PresentationMode = runMode == LabRunModeType.Live
+            ? LabPresentationMode.Live
+            : LabPresentationMode.Standard;
     }
 
     private void RefreshUi()

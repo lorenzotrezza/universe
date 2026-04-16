@@ -240,6 +240,7 @@ MonoBehaviour:
   toolStatusText: {fileID: 554084025}
   hazardStatusText: {fileID: 901402320}
   summaryText: {fileID: 426945929}
+  debugHintText: {fileID: 0}
 --- !u!114 &94366037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3506,6 +3507,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LabDebugHotkeys
   taskManager: {fileID: 1277076245}
+  rigRoot: {fileID: 0}
+  moveSpeed: 2.2
+  turnSpeed: 120
+  forceDesktopPreviewInEditor: 1
+  rebuildLearningDeskOnPlay: 1
 --- !u!1 &901402317
 GameObject:
   m_ObjectHideFlags: 0
@@ -5052,15 +5058,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5f3d3f97036e4f53a47e4288a0fb8f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LabTaskManager
-  ppeRequired: 3
-  toolRequired: 3
-  hazardRequired: 1
   titleText: {fileID: 1471010317}
   instructionText: {fileID: 805714660}
   ppeStatusText: {fileID: 764690934}
   toolStatusText: {fileID: 554084025}
   hazardStatusText: {fileID: 901402320}
   summaryText: {fileID: 426945929}
+  timerMinutes: 7
+  showErrorOverlay: 0
+  helpersEnabled: 1
+  runMode: 0
+  sessionSettings: {fileID: 11400000, guid: bec8e2944d4f74c16b8ec7b8c13d344f, type: 2}
 --- !u!4 &1277076246
 Transform:
   m_ObjectHideFlags: 0

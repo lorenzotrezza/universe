@@ -109,6 +109,7 @@ public class LabDebugHotkeys : MonoBehaviour
         if (keyboard.enterKey.wasPressedThisFrame)
         {
             taskManager.StartConfiguredRun();
+            LabSceneTransition.LoadWarehouse();
         }
 
         if (keyboard.rKey.wasPressedThisFrame)
