@@ -1,0 +1,40 @@
+{
+    "name": "Youbiquo.LeonardoXR.Samples",
+    "rootNamespace": "",
+    "references": [
+        "Unity.XR.OpenXR",
+        "Unity.XR.OpenXR.Editor",
+        "Unity.XR.ARSubsystems",
+        "Unity.XR.Management",
+        "Unity.XR.Management.Editor",
+        "Unity.InputSystem",
+        "Unity.XR.ARFoundation",
+        "Unity.XR.CoreUtils",
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.XR.Hands",
+        "Unity.XR.Hands.Samples.Gestures",
+        "Unity.XR.OpenXR.Features.MetaQuestSupport",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Mathematics",
+        "Unity.TextMeshPro",
+        "UnityEngine.SpatialTracking",
+        "UniTask",
+        "Snapdragon.Spaces.Runtime",
+        "Snapdragon.Spaces.Samples",
+        "DOTweenPro.Scripts",
+        "Youbiquo.LeonardoXR.Runtime"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

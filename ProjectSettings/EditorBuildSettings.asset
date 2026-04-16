@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/LabZero/Scenes/LabZero_Prototype.unity
+    guid: 72cf61b74c66e4dc799572a9228116a3
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 1ded446ab9ff8423ab728facf2f58484, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 7d6012c6fd9a34ce694e915d6b6112c6, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 1347830c3d84c400eb471357afc986fd, type: 2}
