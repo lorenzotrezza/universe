@@ -8,6 +8,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/LabZero/Scenes/LabZero_Prototype.unity
     guid: 72cf61b74c66e4dc799572a9228116a3
+  - enabled: 1
+    path: Assets/LabZero/Scenes/LabWarehouse.unity
+    guid: 29defb289815d4e5ea4912b7994c2198
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 1ded446ab9ff8423ab728facf2f58484, type: 2}
