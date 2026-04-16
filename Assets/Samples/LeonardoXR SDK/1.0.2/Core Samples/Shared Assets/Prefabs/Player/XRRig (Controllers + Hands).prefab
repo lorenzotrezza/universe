@@ -1555,6 +1555,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: Left Controller
       objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_grip.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_trigger.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_optionButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_primaryButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_secondaryButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6273158873677032288, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
+      propertyPath: m_thumbstickButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 8360094363890307228, guid: 80a65cd52b8dcb64a950381b5348f35f, type: 3}
       propertyPath: m_AttachTransform
       value: 
@@ -1732,6 +1756,30 @@ PrefabInstance:
     - target: {fileID: 5223850471789887910, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_grip.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_trigger.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_optionButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_primaryButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_secondaryButton.m_Reference
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047346608967789215, guid: 228671667fb08a14ca5045e7fad3dd29, type: 3}
+      propertyPath: m_thumbstickButton.m_Reference
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
