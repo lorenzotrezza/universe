@@ -154,6 +154,7 @@ MonoBehaviour:
   verticalSpeed: 2
   cameraHeight: 0.75
   hideXrRigInEditor: 1
+  warehouseEnvironmentRoot: {fileID: 1479284182}
 --- !u!4 &152787518
 Transform:
   m_ObjectHideFlags: 0

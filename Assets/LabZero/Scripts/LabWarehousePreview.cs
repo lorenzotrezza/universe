@@ -9,9 +9,11 @@ public class LabWarehousePreview : MonoBehaviour
     [SerializeField] private float verticalSpeed = 2f;
     [SerializeField] private float cameraHeight = 0.75f;
     [SerializeField] private bool hideXrRigInEditor = true;
+    [SerializeField] private GameObject warehouseEnvironmentRoot;
 
     private Camera _previewCamera;
     private bool _previewReady;
+    private bool _isLiveMock;
 
     private void Awake()
     {
@@ -116,7 +118,7 @@ public class LabWarehousePreview : MonoBehaviour
         }
     }
 
-    private static void HandleShortcuts(Keyboard keyboard)
+    private void HandleShortcuts(Keyboard keyboard)
     {
         if (keyboard.rKey.wasPressedThisFrame)
         {
@@ -127,5 +129,32 @@ public class LabWarehousePreview : MonoBehaviour
         {
             LabSceneTransition.ReturnToLobby();
         }
+
+        if (keyboard.lKey.wasPressedThisFrame)
+        {
+            ToggleLiveMock();
+        }
+    }
+
+    private void ToggleLiveMock()
+    {
+        _isLiveMock = !_isLiveMock;
+
+        if (warehouseEnvironmentRoot != null)
+        {
+            warehouseEnvironmentRoot.SetActive(!_isLiveMock);
+        }
+
+        if (_previewCamera == null)
+        {
+            return;
+        }
+
+        _previewCamera.clearFlags = _isLiveMock
+            ? CameraClearFlags.SolidColor
+            : CameraClearFlags.Skybox;
+        _previewCamera.backgroundColor = _isLiveMock
+            ? new Color(0.15f, 0.15f, 0.15f, 0f)
+            : Color.black;
     }
 }
