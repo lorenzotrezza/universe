@@ -127,18 +127,29 @@ public class LabDeskScreenPresenter : MonoBehaviour
 
     private TMP_Text FindText(string name)
     {
-        var child = transform.Find(name);
-        if (child == null)
+        var children = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var child in children)
         {
-            return null;
+            if (child != null && child.name == name)
+            {
+                return child;
+            }
         }
 
-        return child.GetComponent<TMP_Text>();
+        return null;
     }
 
     private GameObject FindGameObject(string name)
     {
-        var child = transform.Find(name);
-        return child != null ? child.gameObject : null;
+        var children = GetComponentsInChildren<Transform>(true);
+        foreach (var child in children)
+        {
+            if (child != null && child.name == name)
+            {
+                return child.gameObject;
+            }
+        }
+
+        return null;
     }
 }

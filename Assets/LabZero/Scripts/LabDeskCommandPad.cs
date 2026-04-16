@@ -267,7 +267,7 @@ public class LabDeskCommandPad : MonoBehaviour
     {
         if (targetRenderer != null)
         {
-            _runtimeMaterial = targetRenderer.material;
+            _runtimeMaterial = Application.isPlaying ? targetRenderer.material : targetRenderer.sharedMaterial;
         }
     }
 }
