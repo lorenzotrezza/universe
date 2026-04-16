@@ -119,6 +119,54 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &152787516
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 152787518}
+  - component: {fileID: 152787517}
+  m_Layer: 0
+  m_Name: WarehousePreview
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &152787517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 152787516}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1795fe85948514accbc82c63f248ceff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LabWarehousePreview
+  spawnPoint: {fileID: 625761038}
+  moveSpeed: 4
+  turnSpeed: 90
+  verticalSpeed: 2
+--- !u!4 &152787518
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 152787516}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.5, y: 0, z: -5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &375224342
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -170,6 +218,22 @@ PrefabInstance:
     - target: {fileID: 2218496723442559054, guid: e527fc0b90469114f882d222be814e61, type: 3}
       propertyPath: m_Name
       value: XRRig (Controllers + Hands)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4493034314499065372, guid: e527fc0b90469114f882d222be814e61, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.73727727
+      objectReference: {fileID: 0}
+    - target: {fileID: 4493034314499065372, guid: e527fc0b90469114f882d222be814e61, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.6755903
+      objectReference: {fileID: 0}
+    - target: {fileID: 7775712570161578558, guid: e527fc0b90469114f882d222be814e61, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.73727727
+      objectReference: {fileID: 0}
+    - target: {fileID: 7775712570161578558, guid: e527fc0b90469114f882d222be814e61, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.6755903
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -448,3 +512,4 @@ SceneRoots:
   - {fileID: 1479284183}
   - {fileID: 521959192}
   - {fileID: 375224342}
+  - {fileID: 152787518}
