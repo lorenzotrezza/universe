@@ -9,6 +9,7 @@
 /[Uu]serSettings/
 /[Rr]ecordings/
 /Avara_BurstDebugInformation_DoNotShip/
+/avara_BackUpThisFolder_ButDontShipItWithYourGame/
 
 # Unity generated files
 sysinfo.txt
