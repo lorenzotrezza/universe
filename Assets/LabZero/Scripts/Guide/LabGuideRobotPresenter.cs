@@ -215,7 +215,7 @@ public class LabGuideRobotPresenter : MonoBehaviour
             return previewCamera.transform;
         }
 
-        var camera = Object.FindFirstObjectByType<Camera>();
+        var camera = Object.FindAnyObjectByType<Camera>();
         return camera != null ? camera.transform : null;
     }
 
@@ -362,7 +362,7 @@ public class LabGuideRobotPresenter : MonoBehaviour
         var text = textGo.GetComponent<TextMeshProUGUI>();
         text.alignment = alignment;
         text.fontSize = fontSize;
-        text.enableWordWrapping = true;
+        text.textWrappingMode = TextWrappingModes.Normal;
         text.overflowMode = TextOverflowModes.Ellipsis;
         text.raycastTarget = false;
         text.color = Color.white;

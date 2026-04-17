@@ -53,7 +53,7 @@ public class LabGuidePromptBubbleView : MonoBehaviour
         var camera = Camera.main;
         if (camera == null)
         {
-            camera = Object.FindFirstObjectByType<Camera>();
+            camera = Object.FindAnyObjectByType<Camera>();
         }
 
         if (camera == null)
