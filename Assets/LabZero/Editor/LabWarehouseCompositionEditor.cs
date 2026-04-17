@@ -9,6 +9,11 @@ public static class LabWarehouseCompositionEditor
 {
     private const string LobbyScenePath = "Assets/LabZero/Scenes/LabZero_Prototype.unity";
     private const string WarehouseScenePath = "Assets/LabZero/Scenes/LabWarehouse.unity";
+    private const float ImportedFloorY = -4.38f;
+    private const float ImportedFloorMinX = -29.31f;
+    private const float ImportedFloorMaxX = -13.85f;
+    private const float ImportedFloorMinZ = -15.78f;
+    private const float ImportedFloorMaxZ = 15.70f;
 
     private static Material _darkMetal;
     private static Material _belt;
@@ -55,15 +60,16 @@ public static class LabWarehouseCompositionEditor
         RestoreSingleWarehouseShell(environment);
         RepositionPlayerStart(environment);
 
-        var anchors = MakeGroup("WarehouseStoryAnchors", environment.transform, Vector3.zero);
+        var anchors = MakeGroup("WarehouseStoryAnchors", environment.transform, new Vector3(0f, ImportedFloorY, 0f));
         BuildPpeStation(anchors.transform);
-        BuildBreakCorner(anchors.transform);
+        BuildWorkCell(anchors.transform);
         BuildConveyorLine(anchors.transform);
         BuildPackagingArea(anchors.transform);
-        BuildMachineCell(anchors.transform);
-        BuildReceivingArea(anchors.transform);
+        BuildBreakRoom(anchors.transform);
+        BuildFinalLoadingArea(anchors.transform);
+        BuildInboundPalletArea(anchors.transform);
         BuildDistractionObjects(anchors.transform);
-        BuildRouteMarkers(anchors.transform);
+        BuildWorkflowFloorCues(anchors.transform);
 
         EditorUtility.SetDirty(anchors);
         EditorUtility.SetDirty(environment);
@@ -104,13 +110,21 @@ public static class LabWarehouseCompositionEditor
         warehouseBay.transform.localPosition = Vector3.zero;
         warehouseBay.transform.localRotation = Quaternion.identity;
         warehouseBay.transform.localScale = Vector3.one;
+        DestroyIfPresent("PlayableFloor");
+        DestroyIfPresent("Boundary_Left");
+        DestroyIfPresent("Boundary_Right");
+        DestroyIfPresent("Boundary_Back");
+        DestroyIfPresent("Entrance_GuideRail");
+        SetActiveIfPresent("Object_32", true);
+        SetActiveIfPresent("Object_30", false);
+        SetActiveIfPresent("Object_46", true);
         EditorUtility.SetDirty(warehouseBay);
     }
 
     private static void RepositionPlayerStart(GameObject environment)
     {
-        var spawnPosition = new Vector3(-31f, 0f, -1.75f);
-        var spawnRotation = Quaternion.Euler(0f, 86f, 0f);
+        var spawnPosition = new Vector3(-28.15f, ImportedFloorY, -12.85f);
+        var spawnRotation = Quaternion.Euler(0f, 24f, 0f);
 
         var spawnPoint = FindSceneObject("SpawnPoint");
         if (spawnPoint == null)
@@ -171,12 +185,14 @@ public static class LabWarehouseCompositionEditor
 
     private static void BuildPpeStation(Transform anchors)
     {
-        var ppe = MakeGroup("PPE Station Rack", anchors, new Vector3(-27f, 0f, -9.5f));
-        MakeCube("PPE Rack Back", ppe.transform, new Vector3(0f, 1.25f, 0.25f), new Vector3(3.2f, 2.1f, 0.12f), _darkMetal);
+        var ppe = MakeGroup("PPE Station Rack", anchors, new Vector3(-26.65f, 0f, -12.45f));
+        MakeCube("PPE Rack Back", ppe.transform, new Vector3(0f, 1.05f, 0.25f), new Vector3(3.2f, 2.1f, 0.12f), _darkMetal);
         MakeCube("PPE Bench", ppe.transform, new Vector3(0f, 0.32f, -0.45f), new Vector3(3.3f, 0.18f, 0.7f), _cardboard);
+        MakeCube("PPE Bench Support Left", ppe.transform, new Vector3(-1.35f, 0.23f, -0.45f), new Vector3(0.14f, 0.46f, 0.14f), _darkMetal);
+        MakeCube("PPE Bench Support Right", ppe.transform, new Vector3(1.35f, 0.23f, -0.45f), new Vector3(0.14f, 0.46f, 0.14f), _darkMetal);
         MakeCylinder("PPE Left Post", ppe.transform, new Vector3(-1.45f, 1.15f, -0.05f), new Vector3(0.06f, 1.1f, 0.06f), Vector3.zero, _darkMetal);
         MakeCylinder("PPE Right Post", ppe.transform, new Vector3(1.45f, 1.15f, -0.05f), new Vector3(0.06f, 1.1f, 0.06f), Vector3.zero, _darkMetal);
-        MakeLabel("PPE Station Label", ppe.transform, "DPI: casco, occhiali, cuffie, guanti, gilet, scarpe", new Vector3(0f, 2.45f, -0.15f), new Vector3(65f, 0f, 0f), 0.22f, 4.8f);
+        MakeLabel("PPE Station Label", ppe.transform, "DPI: casco, occhiali, cuffie, guanti, gilet, scarpe", new Vector3(0f, 2.45f, -0.15f), new Vector3(65f, 0f, 0f), 0.22f, 4.5f);
 
         ConfigureInteractable(MakeSphere("Casco DPI", ppe.transform, new Vector3(-1.1f, 0.72f, -0.45f), new Vector3(0.45f, 0.24f, 0.36f), _yellow), LabSafetyItemType.Helmet, LabSafetyItemRole.Ppe, LabSafetyZoneType.PpeStation, null);
         ConfigureInteractable(MakeCube("Occhiali DPI", ppe.transform, new Vector3(-0.45f, 0.72f, -0.45f), new Vector3(0.55f, 0.08f, 0.12f), _glass), LabSafetyItemType.SafetyGlasses, LabSafetyItemRole.Ppe, LabSafetyZoneType.PpeStation, null);
@@ -186,103 +202,138 @@ public static class LabWarehouseCompositionEditor
         ConfigureInteractable(MakeCube("Scarpe Antinfortunistiche", ppe.transform, new Vector3(0.75f, 1.05f, -0.05f), new Vector3(0.75f, 0.22f, 0.22f), _black), LabSafetyItemType.SafetyShoes, LabSafetyItemRole.Ppe, LabSafetyZoneType.PpeStation, null);
     }
 
-    private static void BuildBreakCorner(Transform anchors)
+    private static void BuildWorkCell(Transform anchors)
     {
-        var breakRoom = MakeGroup("Break Corner Open Room", anchors, new Vector3(-25.5f, 0f, 15.5f));
-        MakeCube("Break Room Divider Wall", breakRoom.transform, new Vector3(3.3f, 1.1f, 0f), new Vector3(0.18f, 2.2f, 5.6f), _darkMetal);
-        MakeCube("Break Room Floor Marker", breakRoom.transform, new Vector3(0f, 0.015f, -2.25f), new Vector3(5.6f, 0.03f, 0.14f), _yellow);
-        MakeCube("Break Room Floor Marker Left", breakRoom.transform, new Vector3(-2.75f, 0.015f, 0f), new Vector3(0.14f, 0.03f, 4.5f), _yellow);
-        MakeCube("Break Room Floor Marker Right", breakRoom.transform, new Vector3(2.75f, 0.015f, 0f), new Vector3(0.14f, 0.03f, 4.5f), _yellow);
-        MakeCube("Break Counter Long", breakRoom.transform, new Vector3(-0.9f, 0.48f, 1.75f), new Vector3(4.4f, 0.18f, 0.62f), _cardboard);
-        MakeCube("Break Counter Side", breakRoom.transform, new Vector3(-2.35f, 0.48f, 0.2f), new Vector3(0.62f, 0.18f, 2.5f), _cardboard);
-        MakeCube("Coffee Machine Placeholder", breakRoom.transform, new Vector3(-1.6f, 0.92f, 1.75f), new Vector3(0.45f, 0.65f, 0.42f), _darkMetal);
-        MakeCylinder("Coffee Cup", breakRoom.transform, new Vector3(-0.95f, 0.82f, 1.65f), new Vector3(0.11f, 0.12f, 0.11f), Vector3.zero, _white);
-        ConfigureInteractable(MakeCube("Cibo Zona Ristoro", breakRoom.transform, new Vector3(-0.25f, 0.82f, 1.75f), new Vector3(0.52f, 0.14f, 0.36f), _orange), LabSafetyItemType.Food, LabSafetyItemRole.BreakAreaOnly, LabSafetyZoneType.BreakCorner, null);
-        ConfigureInteractable(MakeCylinder("Birra Vietata", breakRoom.transform, new Vector3(0.55f, 0.88f, 1.72f), new Vector3(0.1f, 0.28f, 0.1f), Vector3.zero, _red), LabSafetyItemType.Beer, LabSafetyItemRole.Prohibited, LabSafetyZoneType.BreakCorner, null);
-        MakeCylinder("Break Stool A", breakRoom.transform, new Vector3(0.9f, 0.32f, -0.95f), new Vector3(0.35f, 0.18f, 0.35f), Vector3.zero, _darkMetal);
-        MakeCylinder("Break Stool B", breakRoom.transform, new Vector3(-0.2f, 0.32f, -1.1f), new Vector3(0.35f, 0.18f, 0.35f), Vector3.zero, _darkMetal);
-        MakeLabel("Break Room Label", breakRoom.transform, "Zona ristoro: cibo solo qui, alcol vietato", new Vector3(0f, 2.25f, 2.1f), new Vector3(65f, 180f, 0f), 0.22f, 4.8f);
+        var work = MakeGroup("Work Cell Prep Area", anchors, new Vector3(-25.7f, 0f, -6.9f));
+        MakeCube("Work Bench", work.transform, new Vector3(0f, 0.82f, 0f), new Vector3(4.1f, 0.18f, 1.15f), _cardboard);
+        MakeCube("Work Bench Frame", work.transform, new Vector3(0f, 0.48f, 0f), new Vector3(4.3f, 0.18f, 1.25f), _darkMetal);
+        MakeCube("Work Bench Support A", work.transform, new Vector3(-1.75f, 0.39f, -0.42f), new Vector3(0.12f, 0.78f, 0.12f), _darkMetal);
+        MakeCube("Work Bench Support B", work.transform, new Vector3(1.75f, 0.39f, 0.42f), new Vector3(0.12f, 0.78f, 0.12f), _darkMetal);
+        MakeCube("Work Tool Shadow Board", work.transform, new Vector3(-1.85f, 1.55f, 0.12f), new Vector3(0.14f, 1.45f, 1.55f), _darkMetal);
+        MakeCube("Torque Tool", work.transform, new Vector3(-0.85f, 1.08f, -0.2f), new Vector3(0.95f, 0.08f, 0.16f), _blue);
+        MakeCube("Inspection Bin", work.transform, new Vector3(1.15f, 1.05f, 0.1f), new Vector3(0.9f, 0.38f, 0.72f), _green);
+        MakeCube("Parts Tote A", work.transform, new Vector3(0.1f, 1.05f, -0.2f), new Vector3(0.7f, 0.32f, 0.52f), _orange);
+        MakeLabel("Work Cell Label", work.transform, "Area lavoro: prepara pezzi e utensili prima del nastro", new Vector3(0f, 2.35f, 0.25f), new Vector3(65f, 0f, 0f), 0.2f, 4.4f);
     }
 
     private static void BuildConveyorLine(Transform anchors)
     {
-        var conveyor = MakeGroup("Conveyor Sorting Line", anchors, new Vector3(-7f, 0f, -1.5f));
-        MakeCube("Conveyor Base", conveyor.transform, new Vector3(0f, 0.55f, 0f), new Vector3(12f, 0.45f, 2.2f), _darkMetal);
-        MakeCube("Conveyor Belt", conveyor.transform, new Vector3(0f, 0.83f, 0f), new Vector3(11.6f, 0.12f, 1.75f), _belt);
+        var conveyor = MakeGroup("Conveyor Sorting Line", anchors, new Vector3(-21.65f, 0f, -1.5f));
+        MakeCube("Conveyor Base", conveyor.transform, new Vector3(0f, 0.55f, 0f), new Vector3(2.15f, 0.45f, 9.4f), _darkMetal);
+        MakeCube("Conveyor Belt", conveyor.transform, new Vector3(0f, 0.83f, 0f), new Vector3(1.65f, 0.12f, 9.1f), _belt);
+        MakeCube("Conveyor Support A", conveyor.transform, new Vector3(0f, 0.28f, -3.25f), new Vector3(1.7f, 0.56f, 0.14f), _darkMetal);
+        MakeCube("Conveyor Support B", conveyor.transform, new Vector3(0f, 0.28f, 3.25f), new Vector3(1.7f, 0.56f, 0.14f), _darkMetal);
 
         for (var i = 0; i < 8; i++)
         {
-            MakeCylinder("Conveyor Roller " + i, conveyor.transform, new Vector3(-5.1f + i * 1.45f, 1.02f, 0f), new Vector3(0.08f, 0.9f, 0.08f), new Vector3(90f, 0f, 0f), _darkMetal);
+            MakeCylinder("Conveyor Roller " + i, conveyor.transform, new Vector3(0f, 1.02f, -3.9f + i * 1.1f), new Vector3(0.07f, 0.75f, 0.07f), new Vector3(0f, 0f, 90f), _darkMetal);
         }
 
-        MakeCube("Sorting Sensor Gate", conveyor.transform, new Vector3(2.5f, 1.7f, 0f), new Vector3(0.16f, 1.6f, 2.4f), _blue);
-        MakeCube("Sorting Box A", conveyor.transform, new Vector3(-2.2f, 1.25f, -0.15f), new Vector3(0.95f, 0.55f, 0.72f), _cardboard);
-        MakeCube("Sorting Box B", conveyor.transform, new Vector3(1.1f, 1.25f, 0.25f), new Vector3(0.75f, 0.5f, 0.62f), _cardboard);
-        MakeLabel("Conveyor Label", conveyor.transform, "Smistamento merci: resta nel percorso segnato", new Vector3(0f, 2.35f, -1.35f), new Vector3(65f, 0f, 0f), 0.22f, 5.5f);
+        MakeCube("Sorting Sensor Gate", conveyor.transform, new Vector3(0f, 1.7f, 2.25f), new Vector3(2.35f, 1.45f, 0.16f), _blue);
+        MakeCube("Sorting Box A", conveyor.transform, new Vector3(-0.22f, 1.25f, -2.2f), new Vector3(0.85f, 0.55f, 0.68f), _cardboard);
+        MakeCube("Sorting Box B", conveyor.transform, new Vector3(0.18f, 1.25f, 1.1f), new Vector3(0.72f, 0.5f, 0.62f), _cardboard);
+        MakeLabel("Conveyor Label", conveyor.transform, "Catena e nastro: resta concentrato sul flusso", new Vector3(0f, 2.35f, -3.6f), new Vector3(65f, 0f, 0f), 0.2f, 4.5f);
 
         for (var i = 0; i < 6; i++)
         {
-            MakeCube("Sorting Floor Stripe " + i, conveyor.transform, new Vector3(-5.4f + i * 2.1f, 0.025f, -1.85f), new Vector3(1.35f, 0.035f, 0.12f), _yellow);
+            MakeCube("Sorting Floor Stripe " + i, conveyor.transform, new Vector3(-1.25f, 0.025f, -4f + i * 1.55f), new Vector3(0.14f, 0.035f, 0.95f), _yellow);
         }
     }
 
     private static void BuildPackagingArea(Transform anchors)
     {
-        var packaging = MakeGroup("Packaging And Pallet Area", anchors, new Vector3(10f, 0f, -9.5f));
-        MakeCube("Packaging Table", packaging.transform, new Vector3(0f, 0.78f, 0f), new Vector3(4.4f, 0.18f, 1.5f), _cardboard);
-        MakeCube("Packaging Tape Roll", packaging.transform, new Vector3(-1.35f, 1.02f, 0.15f), new Vector3(0.45f, 0.12f, 0.45f), _yellow);
-        MakeCube("Packaging Scanner", packaging.transform, new Vector3(1.3f, 1.05f, -0.1f), new Vector3(0.45f, 0.22f, 0.32f), _blue);
-        MakePallet(packaging.transform, new Vector3(0.1f, 0f, 2.25f), _cardboard);
-        MakeCube("Packaging Box Stack 1", packaging.transform, new Vector3(0.1f, 0.82f, 2.25f), new Vector3(0.9f, 0.7f, 0.8f), _cardboard);
-        MakeCube("Packaging Box Stack 2", packaging.transform, new Vector3(1.05f, 0.62f, 2.22f), new Vector3(0.72f, 0.48f, 0.7f), _cardboard);
-        MakeLabel("Packaging Label", packaging.transform, "Imballaggio: mani libere, niente distrazioni", new Vector3(0f, 2.15f, 0f), new Vector3(65f, 0f, 0f), 0.22f, 4.8f);
+        var packaging = MakeGroup("Packaging And Quality Check", anchors, new Vector3(-17.7f, 0f, 5.55f));
+        MakeCube("Quality Check Table", packaging.transform, new Vector3(0f, 0.78f, 0f), new Vector3(4.3f, 0.18f, 1.4f), _cardboard);
+        MakeCube("Quality Table Support A", packaging.transform, new Vector3(-1.65f, 0.39f, -0.48f), new Vector3(0.12f, 0.78f, 0.12f), _darkMetal);
+        MakeCube("Quality Table Support B", packaging.transform, new Vector3(1.65f, 0.39f, 0.48f), new Vector3(0.12f, 0.78f, 0.12f), _darkMetal);
+        MakeCube("Packaging Tape Roll", packaging.transform, new Vector3(-1.25f, 1.02f, 0.15f), new Vector3(0.42f, 0.12f, 0.42f), _yellow);
+        MakeCube("Barcode Scanner", packaging.transform, new Vector3(1.25f, 1.05f, -0.1f), new Vector3(0.42f, 0.22f, 0.32f), _blue);
+        MakeCube("Checklist Tablet Mount", packaging.transform, new Vector3(0.15f, 1.12f, -0.45f), new Vector3(0.62f, 0.08f, 0.42f), _darkMetal);
+        MakePallet(packaging.transform, new Vector3(-0.35f, 0f, 2.25f), _cardboard);
+        MakeCube("Packed Box Stack 1", packaging.transform, new Vector3(-0.35f, 0.82f, 2.25f), new Vector3(0.9f, 0.7f, 0.8f), _cardboard);
+        MakeCube("Packed Box Stack 2", packaging.transform, new Vector3(0.65f, 0.62f, 2.22f), new Vector3(0.72f, 0.48f, 0.7f), _cardboard);
+        MakeLabel("Packaging Label", packaging.transform, "Controllo e imballaggio: mani libere, niente distrazioni", new Vector3(0f, 2.15f, 0f), new Vector3(65f, 0f, 0f), 0.2f, 4.4f);
     }
 
-    private static void BuildMachineCell(Transform anchors)
+    private static void BuildBreakRoom(Transform anchors)
     {
-        var machine = MakeGroup("Machine Hazard Cell", anchors, new Vector3(11.5f, 0f, 9.5f));
-        MakeCube("Machine Body", machine.transform, new Vector3(0f, 1.0f, 0f), new Vector3(3.2f, 2.0f, 1.8f), _darkMetal);
-        MakeCube("Machine Infeed", machine.transform, new Vector3(-2.5f, 0.75f, 0f), new Vector3(1.8f, 0.35f, 1.0f), _belt);
-        MakeCube("Machine Control Panel", machine.transform, new Vector3(2.0f, 1.15f, -0.65f), new Vector3(0.55f, 0.9f, 0.18f), _blue);
-        MakeSphere("Emergency Stop Button", machine.transform, new Vector3(2.02f, 1.28f, -0.78f), new Vector3(0.22f, 0.22f, 0.08f), _red);
-        MakeCube("Machine Safety Rail Front", machine.transform, new Vector3(0f, 0.68f, -1.45f), new Vector3(4.8f, 0.12f, 0.12f), _yellow);
-        MakeCube("Machine Safety Rail Back", machine.transform, new Vector3(0f, 0.68f, 1.45f), new Vector3(4.8f, 0.12f, 0.12f), _yellow);
-        MakeLabel("Machine Label", machine.transform, "Area macchine: casco, cuffie e distanza", new Vector3(0f, 2.55f, 0f), new Vector3(65f, 0f, 0f), 0.22f, 4.8f);
+        var breakRoom = MakeGroup("Break Room Enclosed", anchors, new Vector3(-26.55f, 0f, 11.9f));
+        MakeCube("Break Room Back Wall", breakRoom.transform, new Vector3(0f, 1.25f, 2.65f), new Vector3(4.7f, 2.5f, 0.14f), _darkMetal);
+        MakeCube("Break Room Left Wall", breakRoom.transform, new Vector3(-2.35f, 1.25f, 0f), new Vector3(0.14f, 2.5f, 5.3f), _darkMetal);
+        MakeCube("Break Room Right Wall", breakRoom.transform, new Vector3(2.35f, 1.25f, 0f), new Vector3(0.14f, 2.5f, 5.3f), _darkMetal);
+        MakeCube("Break Room Front Wall Left", breakRoom.transform, new Vector3(-1.55f, 1.25f, -2.65f), new Vector3(1.6f, 2.5f, 0.14f), _darkMetal);
+        MakeCube("Break Room Front Wall Right", breakRoom.transform, new Vector3(1.55f, 1.25f, -2.65f), new Vector3(1.6f, 2.5f, 0.14f), _darkMetal);
+        MakeCube("Break Room Door Header", breakRoom.transform, new Vector3(0f, 2.35f, -2.65f), new Vector3(1.25f, 0.3f, 0.16f), _darkMetal);
+        MakeCube("Break Room Door Opening", breakRoom.transform, new Vector3(0f, 1.05f, -2.72f), new Vector3(1.05f, 2.1f, 0.04f), _black);
+        MakeCube("Break Counter Long", breakRoom.transform, new Vector3(-0.45f, 0.48f, 1.75f), new Vector3(3.5f, 0.18f, 0.62f), _cardboard);
+        MakeCube("Coffee Machine Placeholder", breakRoom.transform, new Vector3(-1.55f, 0.92f, 1.75f), new Vector3(0.45f, 0.65f, 0.42f), _darkMetal);
+        MakeCube("Snack Vending Machine", breakRoom.transform, new Vector3(1.58f, 1.0f, 1.55f), new Vector3(0.75f, 1.8f, 0.42f), _glass);
+        MakeCylinder("Coffee Cup", breakRoom.transform, new Vector3(-0.95f, 0.82f, 1.65f), new Vector3(0.11f, 0.12f, 0.11f), Vector3.zero, _white);
+        MakeCylinder("Water Bottle", breakRoom.transform, new Vector3(-0.45f, 0.92f, 1.65f), new Vector3(0.09f, 0.28f, 0.09f), Vector3.zero, _glass);
+        ConfigureInteractable(MakeCube("Cibo Zona Ristoro", breakRoom.transform, new Vector3(0.1f, 0.82f, 1.75f), new Vector3(0.52f, 0.14f, 0.36f), _orange), LabSafetyItemType.Food, LabSafetyItemRole.BreakAreaOnly, LabSafetyZoneType.BreakCorner, null);
+        MakeCylinder("Break Stool A", breakRoom.transform, new Vector3(0.9f, 0.32f, -0.95f), new Vector3(0.35f, 0.18f, 0.35f), Vector3.zero, _darkMetal);
+        MakeCylinder("Break Stool B", breakRoom.transform, new Vector3(-0.2f, 0.32f, -1.1f), new Vector3(0.35f, 0.18f, 0.35f), Vector3.zero, _darkMetal);
+        MakeLabel("Break Room Label", breakRoom.transform, "Zona ristoro: cibo e bevande solo qui", new Vector3(0f, 2.85f, 1.5f), new Vector3(65f, 180f, 0f), 0.2f, 4.1f);
     }
 
-    private static void BuildReceivingArea(Transform anchors)
+    private static void BuildFinalLoadingArea(Transform anchors)
     {
-        var receiving = MakeGroup("Receiving Freight Area", anchors, new Vector3(21f, 0f, -4f));
-        MakeCube("Container Placeholder Blue", receiving.transform, new Vector3(0f, 1.2f, -4.4f), new Vector3(6.6f, 2.4f, 2.2f), _blue);
-        MakeCube("Container Placeholder Green", receiving.transform, new Vector3(4.2f, 1.2f, -1.7f), new Vector3(6.0f, 2.4f, 2.2f), _green);
+        var loading = MakeGroup("Final Loading Exit", anchors, new Vector3(-21.55f, 0f, 0f));
+        MakeCube("Simulated Open Shutter Void", loading.transform, new Vector3(0f, 1.55f, ImportedFloorMaxZ + 0.02f), new Vector3(6.2f, 3.1f, 0.12f), _black);
+        MakeCube("Raised Shutter Door Panel", loading.transform, new Vector3(0f, 3.35f, ImportedFloorMaxZ - 0.12f), new Vector3(6.4f, 0.8f, 0.18f), _darkMetal);
+        MakeCube("Loading Door Frame Left", loading.transform, new Vector3(-3.25f, 1.6f, ImportedFloorMaxZ - 0.08f), new Vector3(0.18f, 3.2f, 0.22f), _yellow);
+        MakeCube("Loading Door Frame Right", loading.transform, new Vector3(3.25f, 1.6f, ImportedFloorMaxZ - 0.08f), new Vector3(0.18f, 3.2f, 0.22f), _yellow);
 
-        for (var i = 0; i < 6; i++)
-        {
-            MakeCube("Container Rib Blue " + i, receiving.transform, new Vector3(-3f + i * 1.2f, 1.22f, -5.54f), new Vector3(0.08f, 2.25f, 0.08f), _darkMetal);
-        }
+        var finalConveyor = MakeGroup("Final Conveyor To Loading Door", loading.transform, Vector3.zero);
+        MakeCube("Final Conveyor Base", finalConveyor.transform, new Vector3(0f, 0.55f, 12.9f), new Vector3(2.0f, 0.45f, 7.8f), _darkMetal);
+        MakeCube("Final Conveyor Belt", finalConveyor.transform, new Vector3(0f, 0.83f, 12.9f), new Vector3(1.55f, 0.12f, 7.55f), _belt);
+        MakeCube("Final Conveyor Support A", finalConveyor.transform, new Vector3(0f, 0.28f, 10.1f), new Vector3(1.6f, 0.56f, 0.14f), _darkMetal);
+        MakeCube("Final Conveyor Support B", finalConveyor.transform, new Vector3(0f, 0.28f, 15.3f), new Vector3(1.6f, 0.56f, 0.14f), _darkMetal);
+        MakeCube("Ready Package A", finalConveyor.transform, new Vector3(-0.3f, 1.18f, 11.1f), new Vector3(0.75f, 0.55f, 0.65f), _cardboard);
+        MakeCube("Ready Package B", finalConveyor.transform, new Vector3(0.22f, 1.18f, 13.2f), new Vector3(0.72f, 0.52f, 0.62f), _cardboard);
+        MakeCube("Ready Package C", finalConveyor.transform, new Vector3(-0.15f, 1.18f, 15.35f), new Vector3(0.72f, 0.52f, 0.62f), _cardboard);
 
-        MakePallet(receiving.transform, new Vector3(-2.8f, 0f, 1.0f), _cardboard);
-        MakeCube("Received Crate", receiving.transform, new Vector3(-2.8f, 0.7f, 1.0f), new Vector3(1.25f, 0.95f, 1.05f), _cardboard);
-        MakeLabel("Receiving Label", receiving.transform, "Ricevimento merci e container", new Vector3(0f, 2.8f, -3.4f), new Vector3(65f, 0f, 0f), 0.24f, 4.0f);
+        var truck = MakeGroup("Loading Truck Placeholder", loading.transform, new Vector3(0f, 0f, ImportedFloorMaxZ + 6.4f));
+        MakeCube("Truck Cargo Box", truck.transform, new Vector3(0f, 1.55f, 0f), new Vector3(5.7f, 3.1f, 3.5f), _white);
+        MakeCube("Truck Cab", truck.transform, new Vector3(0f, 1.15f, 2.65f), new Vector3(3.2f, 2.3f, 1.8f), _blue);
+        MakeCylinder("Truck Wheel FL", truck.transform, new Vector3(-2.05f, 0.45f, 2.95f), new Vector3(0.42f, 0.18f, 0.42f), new Vector3(0f, 0f, 90f), _black);
+        MakeCylinder("Truck Wheel FR", truck.transform, new Vector3(2.05f, 0.45f, 2.95f), new Vector3(0.42f, 0.18f, 0.42f), new Vector3(0f, 0f, 90f), _black);
+        MakeCylinder("Truck Wheel RL", truck.transform, new Vector3(-2.05f, 0.45f, -1.45f), new Vector3(0.42f, 0.18f, 0.42f), new Vector3(0f, 0f, 90f), _black);
+        MakeCylinder("Truck Wheel RR", truck.transform, new Vector3(2.05f, 0.45f, -1.45f), new Vector3(0.42f, 0.18f, 0.42f), new Vector3(0f, 0f, 90f), _black);
+        MakeLabel("Loading Exit Label", loading.transform, "Uscita merci: nastro finale verso camion", new Vector3(0f, 3.05f, 13.9f), new Vector3(65f, 0f, 0f), 0.2f, 4.1f);
+    }
+
+    private static void BuildInboundPalletArea(Transform anchors)
+    {
+        var inbound = MakeGroup("Inbound Pallet Staging", anchors, new Vector3(-17.1f, 0f, -11.6f));
+        MakePallet(inbound.transform, new Vector3(-0.9f, 0f, 0f), _cardboard);
+        MakePallet(inbound.transform, new Vector3(1.1f, 0f, 0.1f), _cardboard);
+        MakeCube("Inbound Crate A", inbound.transform, new Vector3(-0.9f, 0.72f, 0f), new Vector3(1.0f, 0.8f, 0.9f), _cardboard);
+        MakeCube("Inbound Crate B", inbound.transform, new Vector3(1.1f, 0.62f, 0.1f), new Vector3(0.9f, 0.6f, 0.82f), _cardboard);
+        MakeCube("Small Forklift Placeholder", inbound.transform, new Vector3(0.1f, 0.65f, 2.15f), new Vector3(1.4f, 1.3f, 1.7f), _orange);
+        MakeCube("Forklift Mast", inbound.transform, new Vector3(0.1f, 1.55f, 1.15f), new Vector3(1.3f, 1.75f, 0.12f), _darkMetal);
+        MakeLabel("Inbound Label", inbound.transform, "Area lavoro: merci in ingresso e preparazione", new Vector3(0f, 2.45f, 0.9f), new Vector3(65f, 0f, 0f), 0.2f, 4.2f);
     }
 
     private static void BuildDistractionObjects(Transform anchors)
     {
         var distractions = MakeGroup("Distraction Objects", anchors, Vector3.zero);
-        ConfigureInteractable(MakeCube("Telefono con Notifica", distractions.transform, new Vector3(-3f, 1.25f, -2.15f), new Vector3(0.18f, 0.035f, 0.36f), _black), LabSafetyItemType.Phone, LabSafetyItemRole.Distractor, LabSafetyZoneType.Sorting, _notificationClip);
-        ConfigureInteractable(MakeCube("Tablet Distrattore", distractions.transform, new Vector3(8.6f, 1.04f, -9.45f), new Vector3(0.55f, 0.04f, 0.38f), _glass), LabSafetyItemType.Tablet, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
-        ConfigureInteractable(MakeSphere("Pallina Distrattore", distractions.transform, new Vector3(8.1f, 1.02f, -9.0f), new Vector3(0.34f, 0.34f, 0.34f), _red), LabSafetyItemType.Ball, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
-        ConfigureInteractable(MakeCube("Gameboy Distrattore", distractions.transform, new Vector3(10.8f, 1.04f, -9.4f), new Vector3(0.42f, 0.08f, 0.55f), _green), LabSafetyItemType.HandheldGame, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
-        ConfigureInteractable(MakeCube("Cibo Fuori Area", distractions.transform, new Vector3(12.4f, 1.04f, -9.1f), new Vector3(0.42f, 0.12f, 0.3f), _orange), LabSafetyItemType.Food, LabSafetyItemRole.BreakAreaOnly, LabSafetyZoneType.Packaging, null);
+        ConfigureInteractable(MakeCube("Telefono con Notifica", distractions.transform, new Vector3(-21.95f, 1.25f, -3.7f), new Vector3(0.18f, 0.035f, 0.36f), _black), LabSafetyItemType.Phone, LabSafetyItemRole.Distractor, LabSafetyZoneType.Sorting, _notificationClip);
+        ConfigureInteractable(MakeCube("Tablet Distrattore", distractions.transform, new Vector3(-18.55f, 1.04f, 5.15f), new Vector3(0.55f, 0.04f, 0.38f), _glass), LabSafetyItemType.Tablet, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
+        ConfigureInteractable(MakeSphere("Pallina Distrattore", distractions.transform, new Vector3(-18.9f, 0.24f, 3.85f), new Vector3(0.34f, 0.34f, 0.34f), _red), LabSafetyItemType.Ball, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
+        ConfigureInteractable(MakeCube("Gameboy Distrattore", distractions.transform, new Vector3(-16.55f, 1.04f, 5.2f), new Vector3(0.42f, 0.08f, 0.55f), _green), LabSafetyItemType.HandheldGame, LabSafetyItemRole.Distractor, LabSafetyZoneType.Packaging, null);
+        ConfigureInteractable(MakeCube("Cibo Fuori Area", distractions.transform, new Vector3(-24.7f, 1.04f, -6.75f), new Vector3(0.42f, 0.12f, 0.3f), _orange), LabSafetyItemType.Food, LabSafetyItemRole.BreakAreaOnly, LabSafetyZoneType.Operational, null);
+        ConfigureInteractable(MakeCylinder("Birra Distrattore", distractions.transform, new Vector3(-25.2f, 1.08f, -6.7f), new Vector3(0.1f, 0.28f, 0.1f), Vector3.zero, _red), LabSafetyItemType.Beer, LabSafetyItemRole.Prohibited, LabSafetyZoneType.Operational, null);
     }
 
-    private static void BuildRouteMarkers(Transform anchors)
+    private static void BuildWorkflowFloorCues(Transform anchors)
     {
-        var route = MakeGroup("Ground Floor Training Route", anchors, Vector3.zero);
-        MakeCube("Route Marker From Entrance", route.transform, new Vector3(-25f, 0.035f, -5.4f), new Vector3(4.5f, 0.04f, 0.16f), _yellow);
-        MakeCube("Route Marker To Conveyor", route.transform, new Vector3(-16f, 0.035f, -4.3f), new Vector3(8.5f, 0.04f, 0.16f), _yellow);
-        MakeCube("Route Marker To Packaging", route.transform, new Vector3(4.5f, 0.035f, -6.2f), new Vector3(8f, 0.04f, 0.16f), _yellow);
-        MakeCube("Route Marker To Machine", route.transform, new Vector3(8.8f, 0.035f, 3.2f), new Vector3(0.16f, 0.04f, 7.6f), _yellow);
+        var route = MakeGroup("Workflow Floor Cues", anchors, Vector3.zero);
+        MakeCube("Cue PPE To Work", route.transform, new Vector3(-26.0f, 0.025f, -9.65f), new Vector3(0.65f, 0.035f, 1.25f), _green);
+        MakeCube("Cue Work To Conveyor", route.transform, new Vector3(-23.7f, 0.025f, -5.3f), new Vector3(0.65f, 0.035f, 1.25f), _green);
+        MakeCube("Cue Conveyor To Packaging", route.transform, new Vector3(-20.2f, 0.025f, 2.9f), new Vector3(0.65f, 0.035f, 1.25f), _green);
+        MakeCube("Cue Packaging To Exit", route.transform, new Vector3(-19.0f, 0.025f, 9.2f), new Vector3(0.65f, 0.035f, 1.25f), _green);
+        MakeLabel("Workflow Cue Label", route.transform, "Flusso: DPI -> lavoro -> nastro -> controllo -> uscita merci", new Vector3(-21.6f, 2.05f, -8.9f), new Vector3(65f, 0f, 0f), 0.18f, 6.0f);
     }
 
     private static GameObject MakeGroup(string name, Transform parent, Vector3 localPosition)
@@ -425,6 +476,16 @@ public static class LabWarehouseCompositionEditor
         if (go != null)
         {
             go.SetActive(false);
+            EditorUtility.SetDirty(go);
+        }
+    }
+
+    private static void SetActiveIfPresent(string name, bool active)
+    {
+        var go = FindSceneObject(name);
+        if (go != null)
+        {
+            go.SetActive(active);
             EditorUtility.SetDirty(go);
         }
     }
