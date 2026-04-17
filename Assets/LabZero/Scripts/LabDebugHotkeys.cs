@@ -238,7 +238,7 @@ public class LabDebugHotkeys : MonoBehaviour
                 continue;
             }
 
-            var keep = canvas.name == "Lab Status Canvas" || IsUnderLearningDeskRoot(canvas.transform);
+            var keep = IsUnderLearningDeskRoot(canvas.transform);
             if (!keep)
             {
                 canvas.gameObject.SetActive(false);
@@ -258,13 +258,14 @@ public class LabDebugHotkeys : MonoBehaviour
                     continue;
                 }
 
-                var keep = child.name == "Lab Task Manager" || child.name == "Lab Debug Hotkeys" || child.name == "Lab Status Canvas";
+                var keep = child.name == "Lab Task Manager" || child.name == "Lab Debug Hotkeys";
                 child.gameObject.SetActive(keep);
             }
         }
 
         SetInactiveIfFound("V8 Engine");
         SetInactiveIfFound("Sci-Fi Table");
+        SetInactiveIfFound("Floor");
         SetInactiveIfFound("Floor Shadow Effect");
         SetInactiveIfFound("Directional Light");
         HideLegacyCanvasesExceptLobby();
