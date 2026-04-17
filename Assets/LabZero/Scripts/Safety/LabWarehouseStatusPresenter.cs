@@ -42,12 +42,12 @@ public class LabWarehouseStatusPresenter : MonoBehaviour
 
         if (feedbackText != null)
         {
-            feedbackText.text = sessionManager.LastFeedbackText;
+            feedbackText.text = sessionManager.LastFeedbackText + "\nUltimo equip: " + sessionManager.GetPpeImmediateFeedbackText();
         }
 
         if (statsText != null)
         {
-            statsText.text = $"Errori: {sessionManager.MistakeCount} | Punteggio: {Mathf.RoundToInt(sessionManager.Score)}";
+            statsText.text = $"{sessionManager.GetPpeSummaryText()} | Errori: {sessionManager.MistakeCount} | Punteggio: {Mathf.RoundToInt(sessionManager.Score)}";
         }
     }
 

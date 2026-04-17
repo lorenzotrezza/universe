@@ -96,6 +96,16 @@ public class LabGuideRobotPresenter : MonoBehaviour
         _orientationOnly = orientationOnly;
     }
 
+    public void ShowImmediateFeedback(string feedback)
+    {
+        if (string.IsNullOrWhiteSpace(feedback) || promptBubble == null)
+        {
+            return;
+        }
+
+        promptBubble.ShowPrompt(feedback, LabGuidePromptSeverity.Success);
+    }
+
     public static GameObject EnsureWarehouseGuide()
     {
         if (SceneManager.GetActiveScene().name != WarehouseSceneName)
@@ -248,6 +258,17 @@ public class LabGuideRobotPresenter : MonoBehaviour
 
     private static void BuildDroneVisual(Transform parent)
     {
+        var robotAsset = Resources.Load<GameObject>("ImportedProps/robot");
+        if (robotAsset != null)
+        {
+            var robotVisual = Instantiate(robotAsset, parent);
+            robotVisual.name = "robot Visual";
+            robotVisual.transform.localPosition = Vector3.zero;
+            robotVisual.transform.localRotation = Quaternion.identity;
+            robotVisual.transform.localScale = Vector3.one * 0.18f;
+            return;
+        }
+
         var bodyMaterial = CreateGuideMaterial("Guide Drone Body", new Color(0.08f, 0.18f, 0.22f, 1f));
         var accentMaterial = CreateGuideMaterial("Guide Drone Accent", new Color(0.10f, 0.72f, 0.92f, 1f));
         var darkMaterial = CreateGuideMaterial("Guide Drone Guard", new Color(0.04f, 0.05f, 0.05f, 1f));

@@ -101,12 +101,19 @@ public class LabSafetyInteractable : MonoBehaviour
         sessionManager ??= UnityEngine.Object.FindAnyObjectByType<LabSessionManager>();
         var mistake = ShouldCountAsMistake();
         var feedback = BuildFeedback(mistake);
+        var ppeAdapter = role == LabSafetyItemRole.Ppe ? GetComponent<LabPpeEquipAdapter>() : null;
+        var ppeEquipped = ppeAdapter != null && ppeAdapter.TryEquip();
+        if (ppeEquipped && sessionManager != null)
+        {
+            feedback = sessionManager.GetPpeImmediateFeedbackText();
+        }
+
         if (audioSource != null)
         {
             audioSource.Play();
         }
 
-        if (sessionManager != null)
+        if (sessionManager != null && !ppeEquipped)
         {
             sessionManager.RegisterSafetyFeedback(feedback, mistake);
         }

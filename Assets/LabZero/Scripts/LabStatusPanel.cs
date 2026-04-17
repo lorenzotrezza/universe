@@ -4,6 +4,7 @@ using UnityEngine;
 public class LabStatusPanel : MonoBehaviour
 {
     [SerializeField] private LabTaskManager taskManager;
+    [SerializeField] private LabSessionManager sessionManager;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text instructionText;
     [SerializeField] private TMP_Text ppeStatusText;
@@ -51,12 +52,16 @@ public class LabStatusPanel : MonoBehaviour
 
         if (ppeStatusText != null)
         {
-            ppeStatusText.text = $"Timer: {taskManager.GetTimerSummaryText()}";
+            ppeStatusText.text = sessionManager != null
+                ? sessionManager.GetPpeSummaryText()
+                : $"Timer: {taskManager.GetTimerSummaryText()}";
         }
 
         if (toolStatusText != null)
         {
-            toolStatusText.text = $"Overlay errori: {taskManager.GetErrorOverlayStateText()}";
+            toolStatusText.text = sessionManager != null
+                ? "Ultimo equip: " + sessionManager.GetPpeImmediateFeedbackText()
+                : $"Overlay errori: {taskManager.GetErrorOverlayStateText()}";
         }
 
         if (hazardStatusText != null)
@@ -79,6 +84,7 @@ public class LabStatusPanel : MonoBehaviour
     private void AutoWireIfNeeded()
     {
         taskManager ??= Object.FindAnyObjectByType<LabTaskManager>();
+        sessionManager ??= Object.FindAnyObjectByType<LabSessionManager>();
 
         if (titleText != null && instructionText != null && ppeStatusText != null && toolStatusText != null && hazardStatusText != null && summaryText != null && debugHintText != null)
         {

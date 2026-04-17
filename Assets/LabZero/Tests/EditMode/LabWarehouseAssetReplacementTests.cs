@@ -7,7 +7,7 @@ using UnityEngine;
 [TestFixture]
 public class LabWarehouseAssetReplacementTests
 {
-    private const string PropsFolder = "Assets/LabZero/Models/ImportedProps";
+    private const string PropsFolder = "Assets/LabZero/Resources/ImportedProps";
 
     [Test]
     public void RequestedGlbAssetsAreImportedIntoOwnedFolder()

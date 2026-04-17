@@ -146,7 +146,7 @@ public sealed class LabGuideTargetRegistry : MonoBehaviour
             }
         }
 
-        foreach (var name in new[] { "Casco DPI", "Guanti DPI", "Occhiali DPI", "Cuffie DPI" })
+        foreach (var name in new[] { "Casco DPI", "Occhiali DPI", "Cuffie DPI" })
         {
             var item = GameObject.Find(name);
             var renderer = item != null ? item.GetComponentInChildren<Renderer>(true) : null;
