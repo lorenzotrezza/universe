@@ -10,6 +10,7 @@ public class LabSessionManager : MonoBehaviour
     public LabSessionState RunState { get; private set; }
     public float ElapsedTime { get; private set; }
     public int MistakeCount { get; private set; }
+    public string LastFeedbackText { get; private set; } = "Sessione pronta. Completa il controllo DPI.";
     public float Score => CalculateScore();
     public LabSessionSettings Settings => settings;
 
@@ -32,12 +33,22 @@ public class LabSessionManager : MonoBehaviour
 
     public void RegisterMistake()
     {
-        if (RunState != LabSessionState.Running)
+        RegisterSafetyFeedback("Errore registrato. Correggi l'azione e continua il percorso.", true);
+    }
+
+    public void RegisterSafetyFeedback(string feedbackText, bool countsAsMistake)
+    {
+        if (string.IsNullOrWhiteSpace(feedbackText))
         {
             return;
         }
 
-        MistakeCount++;
+        LastFeedbackText = feedbackText;
+        if (countsAsMistake && RunState == LabSessionState.Running)
+        {
+            MistakeCount++;
+        }
+
         StateChanged?.Invoke();
     }
 
@@ -57,6 +68,7 @@ public class LabSessionManager : MonoBehaviour
         RunState = LabSessionState.NotStarted;
         ElapsedTime = 0f;
         MistakeCount = 0;
+        LastFeedbackText = "Sessione pronta. Completa il controllo DPI.";
         StateChanged?.Invoke();
     }
 

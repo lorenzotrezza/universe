@@ -32,12 +32,13 @@ public class LabDebugHotkeys : MonoBehaviour
     [SerializeField] private Transform rigRoot;
     [SerializeField] private float moveSpeed = 2.2f;
     [SerializeField] private float turnSpeed = 120f;
+    [SerializeField] private bool allowDesktopTranslationInLobby = false;
 
     [Header("Desktop Preview Setup")]
     [SerializeField] private bool forceDesktopPreviewInEditor = true;
 
     [Header("Lobby Runtime Build")]
-    [SerializeField] private bool rebuildLearningDeskOnPlay = true;
+    [SerializeField] private bool rebuildLearningDeskOnPlay = false;
 
     private bool _deskBuilt;
     private bool _previewReady;
@@ -157,6 +158,7 @@ public class LabDebugHotkeys : MonoBehaviour
             }
             else
             {
+                ConfigureExistingDesk(existing);
                 return;
             }
         }
@@ -172,6 +174,17 @@ public class LabDebugHotkeys : MonoBehaviour
 
         var presenter = briefingScreen.gameObject.AddComponent<LabDeskScreenPresenter>();
         presenter.Configure(taskManager);
+    }
+
+    private void ConfigureExistingDesk(GameObject existing)
+    {
+        HideLegacySceneContent();
+
+        var presenter = existing.GetComponentInChildren<LabDeskScreenPresenter>(true);
+        if (presenter != null)
+        {
+            presenter.Configure(taskManager);
+        }
     }
 
     private static Camera EnsureDesktopCamera()
@@ -345,10 +358,10 @@ public class LabDebugHotkeys : MonoBehaviour
 
         CreateLobbyPad(root, "Pad Aiuti", "Aiuti", new Vector3(left, surfaceY, secondRowZ), standardScale, ColorActionTeal, LabDeskCommandType.ToggleHelpers);
         CreateLobbyPad(root, "Pad Modalita", "Modo", new Vector3(center, surfaceY, secondRowZ), standardScale, ColorActionGreen, LabDeskCommandType.ToggleMode);
-        CreateLobbyPad(root, "Pad Start Training", "Avvia", new Vector3(right, surfaceY, secondRowZ), ctaScale, ColorAccentAmber, LabDeskCommandType.StartTraining);
+        CreateLobbyPad(root, "Pad Reset Lobby", "Reset", new Vector3(right, surfaceY, secondRowZ), standardScale, ColorSurfaceRaised, LabDeskCommandType.ResetLobby);
 
         var resetPadPosition = new Vector3(0f, surfaceY, thirdRowZ);
-        CreateLobbyPad(root, "Pad Reset Lobby", "Reset", resetPadPosition, standardScale, ColorSurfaceRaised, LabDeskCommandType.ResetLobby);
+        CreateLobbyPad(root, "Pad Start Training", "Avvia", resetPadPosition, ctaScale, ColorAccentAmber, LabDeskCommandType.StartTraining);
     }
 
     private void CreateLobbyPad(
@@ -477,21 +490,24 @@ public class LabDebugHotkeys : MonoBehaviour
             return;
         }
 
-        var speed = keyboard.leftShiftKey.isPressed ? moveSpeed * 2f : moveSpeed;
-        var forward = Vector3.ProjectOnPlane(rigRoot.forward, Vector3.up).normalized;
-        var right = Vector3.ProjectOnPlane(rigRoot.right, Vector3.up).normalized;
-        var move = Vector3.zero;
-
-        if (keyboard.wKey.isPressed) move += forward;
-        if (keyboard.sKey.isPressed) move -= forward;
-        if (keyboard.aKey.isPressed) move -= right;
-        if (keyboard.dKey.isPressed) move += right;
-        if (keyboard.iKey.isPressed) move += Vector3.up;
-        if (keyboard.kKey.isPressed) move += Vector3.down;
-
-        if (move.sqrMagnitude > 0.0001f)
+        if (allowDesktopTranslationInLobby)
         {
-            rigRoot.position += move.normalized * speed * Time.deltaTime;
+            var speed = keyboard.leftShiftKey.isPressed ? moveSpeed * 2f : moveSpeed;
+            var forward = Vector3.ProjectOnPlane(rigRoot.forward, Vector3.up).normalized;
+            var right = Vector3.ProjectOnPlane(rigRoot.right, Vector3.up).normalized;
+            var move = Vector3.zero;
+
+            if (keyboard.wKey.isPressed) move += forward;
+            if (keyboard.sKey.isPressed) move -= forward;
+            if (keyboard.aKey.isPressed) move -= right;
+            if (keyboard.dKey.isPressed) move += right;
+            if (keyboard.iKey.isPressed) move += Vector3.up;
+            if (keyboard.kKey.isPressed) move += Vector3.down;
+
+            if (move.sqrMagnitude > 0.0001f)
+            {
+                rigRoot.position += move.normalized * speed * Time.deltaTime;
+            }
         }
 
         var turn = 0f;
