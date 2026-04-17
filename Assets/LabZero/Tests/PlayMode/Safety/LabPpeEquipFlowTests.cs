@@ -14,23 +14,26 @@ public class LabPpeEquipFlowTests
         var casco = CreateAdapter("PPE_HardHat_Adapter", manager, "Head", "HardHat", "casco");
         var cuffie = CreateAdapter("PPE_Earmuffs_Adapter", manager, "Ears", "Earmuffs", "cuffie");
         var occhiali = CreateAdapter("PPE_SafetyGlasses_Adapter", manager, "Eyes", "SafetyGlasses", "occhiali");
+        var guanti = CreateAdapter("PPE_Gloves_Adapter", manager, "Hands", "Gloves", "guanti");
 
         try
         {
             Assert.IsTrue((bool)Invoke(casco, "TryEquip"));
             Assert.IsTrue((bool)Invoke(cuffie, "TryEquip"));
             Assert.IsTrue((bool)Invoke(occhiali, "TryEquip"));
+            Assert.IsTrue((bool)Invoke(guanti, "TryEquip"));
             yield return null;
 
             Assert.IsTrue((bool)Invoke(manager, "IsRequiredPpeComplete"));
-            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("3/3"));
-            Assert.That((string)Invoke(manager, "GetPpeImmediateFeedbackText"), Does.Contain("Occhiali"));
+            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("4/4"));
+            Assert.That((string)Invoke(manager, "GetPpeImmediateFeedbackText"), Does.Contain("Guanti"));
         }
         finally
         {
             UnityEngine.Object.Destroy(casco.gameObject);
             UnityEngine.Object.Destroy(cuffie.gameObject);
             UnityEngine.Object.Destroy(occhiali.gameObject);
+            UnityEngine.Object.Destroy(guanti.gameObject);
             UnityEngine.Object.Destroy(manager.gameObject);
         }
     }

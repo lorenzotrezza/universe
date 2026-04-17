@@ -16,7 +16,7 @@ public class LabPpeEquipStateTests
         {
             Assert.AreEqual(0, EquippedSlots(manager).Count);
             Assert.IsFalse((bool)Invoke(manager, "IsRequiredPpeComplete"));
-            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("0/3"));
+            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("0/4"));
         }
         finally
         {
@@ -34,9 +34,11 @@ public class LabPpeEquipStateTests
             Assert.IsTrue(TryEquip(manager, "Head", "HardHat", "casco"));
             Assert.IsTrue(TryEquip(manager, "Ears", "Earmuffs", "cuffie"));
             Assert.IsTrue(TryEquip(manager, "Eyes", "SafetyGlasses", "occhiali"));
+            Assert.IsTrue(TryEquip(manager, "Hands", "Gloves", "guanti"));
 
             Assert.IsFalse(TryEquip(manager, "Head", "SafetyGlasses", "wrong_head"));
             Assert.IsFalse(TryEquip(manager, "Eyes", "HardHat", "wrong_eyes"));
+            Assert.IsFalse(TryEquip(manager, "Hands", "HardHat", "wrong_hands"));
             Assert.IsTrue((bool)Invoke(manager, "IsRequiredPpeComplete"));
         }
         finally
@@ -86,7 +88,7 @@ public class LabPpeEquipStateTests
 
             Assert.AreEqual(1, EquippedSlots(manager).Count);
             Assert.AreEqual(1, equippedCount);
-            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("1/3"));
+            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("1/4"));
         }
         finally
         {
@@ -105,9 +107,11 @@ public class LabPpeEquipStateTests
             Assert.IsTrue(TryEquip(manager, "Head", "HardHat", "casco"));
             Assert.IsTrue(TryEquip(manager, "Ears", "Earmuffs", "cuffie"));
             Assert.IsTrue(TryEquip(manager, "Eyes", "SafetyGlasses", "occhiali"));
+            Assert.IsFalse((bool)Invoke(manager, "IsRequiredPpeComplete"));
+            Assert.IsTrue(TryEquip(manager, "Hands", "Gloves", "guanti"));
 
             Assert.IsTrue((bool)Invoke(manager, "IsRequiredPpeComplete"));
-            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("3/3"));
+            Assert.That((string)Invoke(manager, "GetPpeSummaryText"), Does.Contain("4/4"));
         }
         finally
         {
@@ -140,7 +144,47 @@ public class LabPpeEquipStateTests
 
     private static ICollection EquippedSlots(Component manager)
     {
-        return (ICollection)GetProperty(manager, "EquippedPpeSlots");
+        return new EnumerableCountAdapter((IEnumerable)GetProperty(manager, "EquippedPpeSlots"));
+    }
+
+    private sealed class EnumerableCountAdapter : ICollection
+    {
+        private readonly IEnumerable enumerable;
+
+        public EnumerableCountAdapter(IEnumerable enumerable)
+        {
+            this.enumerable = enumerable;
+        }
+
+        public int Count
+        {
+            get
+            {
+                var count = 0;
+                foreach (var _ in enumerable)
+                {
+                    count++;
+                }
+
+                return count;
+            }
+        }
+
+        public object SyncRoot => this;
+        public bool IsSynchronized => false;
+
+        public void CopyTo(Array array, int index)
+        {
+            foreach (var item in enumerable)
+            {
+                array.SetValue(item, index++);
+            }
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return enumerable.GetEnumerator();
+        }
     }
 
     private static Delegate CreatePpeSlotEquippedHandler(Type eventHandlerType, Action onEvent)
