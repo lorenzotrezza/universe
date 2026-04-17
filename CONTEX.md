@@ -26,3 +26,22 @@ I tasti sul tavolo e lo schermo li utilizzeremo per impostare i prametri del cor
 
 Da li poi si entra nella scena del corso, utilizzando l'asset "free_fire_lone_wolf_mode_3d_model.glb". All interno ha vari capannoni industriali, usiamone uno per implementare la scena. Il gioco vuole formare i dipendenti sulla sicurezza all interno dell impianto. Sarà guidato da un robot flottante (con animazione che galleggia) nel capannone. Il robot guiderà l utente nelle azioni da fare, dobbiamo discutere e ragionare sul manostritto e tutto il flow del gioco. Il contesto è: formazione su sicurezza cantiere trasporto merci container, l utente dovra dotarsi di dispositivi DPI, esempi: l utente deve raccogliere e indossare il cappellino entro un tempo, se non lo fa in tempo penalità, cuffie, occhiali, guanti e facciamo un brainstormin per pensarni altri. 
 Ogetti di ditrazione: cellulare, tablet, pallina, gameboy, mangiare cibo, bere birra.
+
+
+---
+
+- prima img, nella lobby il tasto ha dimenzione errata e va a finire sull altro
+- seconda img, quando premo avvia mi trovo in aria nel capannone, non va bene devo stare a terra in piedi
+- l utente è una persona, nella lobby è seduto e non puo muoversi, puo solo muovere la visuale muovendo la testa, invece nel wharehouse è una persona in piedi che cammina
+- terza img, vorrei essere spiegato perchè nell editor non vedo tutti gli elementi che sono po nella lobby, vedo solo lo schermo e le sue scritte, ma non la stanza il tevolo sedia i bottoni ecc, pk non li visualizzo? dove sono? se voglio modificarli come faccio?
+- prima di passare alla fase 3 che è incentrata sul robot guida, dobbiamo implementare tutto l'ambiente e tutta la storia di gioco. come già detto deve essere un capannone industriale con macchine industralli, smistamento con nastri trasportatori, imballaggi, ecc, e una saletta in un angolo per ristoro dove mangiare. Abbiamo gia definito, indossa dispositivi dpi il casco, poi occhiali cuffie ecc, pensa tu anche altre azioni da fare, poi ne penseremo e ggiungeremo altre. Poi bisogna gestire gli elementi di distrazione: cellulare, tablet, pallina, gameboy, mangiare cibo nella zona di lavoro, bere birra. Non so bene come gestire tutto aiutami tu. il celullare potremmo gestirlo facendo che arriva una notifica al telefono (metti suono apple notifiche) e il giocatore riceve il telefono il mano, e siamo nello step distrattore telefono, qui verra spiegato e indicato di non usare il telefono mentre si lavora e l utente deve posarlo. gameboy pallina e altro potremmo inserirli nella scena da qualche parte appoggiati e se vengono presi parte lo step e viene detto di non giocare sul lavoro, cibo e birra non saprei, cosa pensi? potremmo fare che stanno nella zona ristoro e se li porti nella zona di lavoro vieni avvisato di posarli. Quindi prima di creare il robot nella prossima fase che segue, guida e istruisce l utente, bisogna creare a pieno il capannone di lavoro, smistamento e trasporto merci, con magari anche container (mettili se sono facili da prendere da dentro l asset del wharehouse e ne metti un paio nei posti giusti)
+
+Asset da sostituire appena vuoi alzare la qualità:
+
+Nastro trasportatore vero con rulli/belt modulari.
+Macchine industriali reali: pressa, imballatrice, quadro elettrico, scanner, sensori.
+DPI veri: casco, occhiali, cuffie, guanti, gilet, scarpe.
+Props distrattori: iPhone/cellulare, tablet, Game Boy, pallina.
+Zona ristoro: banco, sedie, macchinetta caffè, distributore, frigo, bottiglie/lattine/cibo.
+Container/pallet/scaffali industriali più realistici.
+Materiali/texture del warehouse importato: le grandi superfici gialle che vedi ancora vengono dal modello WarehouseBay, non dal secondo ambiente rimosso. Se ti danno fastidio, conviene sostituire o ritoccare quell’asset/materiale.
