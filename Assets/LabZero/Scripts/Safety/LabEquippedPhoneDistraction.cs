@@ -8,6 +8,7 @@ public class LabEquippedPhoneDistraction : MonoBehaviour
 {
     [SerializeField] private LabSafetyInteractable phoneInteractable;
     [SerializeField] private LabSessionManager sessionManager;
+    [SerializeField] private LabHotbarInventory hotbarInventory;
     [SerializeField] private Transform equippedAnchor;
     [SerializeField] private Vector3 equippedLocalPosition = new(0.28f, -0.22f, 0.45f);
     [SerializeField] private Vector3 equippedLocalEulerAngles = new(70f, 0f, -8f);
@@ -21,6 +22,7 @@ public class LabEquippedPhoneDistraction : MonoBehaviour
     private Coroutine _notificationRoutine;
 
     public bool IsEquipped => equippedAnchor != null && transform.parent == equippedAnchor;
+    public bool IsStoredInHotbar => phoneInteractable != null && phoneInteractable.IsInHotbar;
     public bool IsNotificationPending { get; private set; }
     public bool HasNotificationTriggered { get; private set; }
 
@@ -39,7 +41,11 @@ public class LabEquippedPhoneDistraction : MonoBehaviour
             EquipToAnchor();
         }
 
-        SetInteractionAvailable(false);
+        if (hotbarInventory == null)
+        {
+            SetInteractionAvailable(false);
+        }
+
         ArmRandomNotification();
     }
 
@@ -65,6 +71,16 @@ public class LabEquippedPhoneDistraction : MonoBehaviour
         sessionManager = manager;
         EquipToAnchor();
         SetInteractionAvailable(false);
+    }
+
+    public void ConfigureForHotbar(LabHotbarInventory inventory, LabSessionManager manager)
+    {
+        hotbarInventory = inventory;
+        sessionManager = manager;
+        phoneInteractable ??= GetComponent<LabSafetyInteractable>();
+        SetInteractionAvailable(true);
+        hotbarInventory?.TryEquip(phoneInteractable);
+        ArmRandomNotification();
     }
 
     public void ArmRandomNotification()
@@ -102,7 +118,10 @@ public class LabEquippedPhoneDistraction : MonoBehaviour
         sessionManager ??= Object.FindAnyObjectByType<LabSessionManager>();
         if (sessionManager != null)
         {
-            sessionManager.RegisterSafetyFeedback(notificationFeedback, false);
+            var feedback = IsStoredInHotbar
+                ? notificationFeedback + " Seleziona il telefono nella hotbar e premi A per usarlo."
+                : notificationFeedback;
+            sessionManager.RegisterSafetyFeedback(feedback, false);
         }
     }
 

@@ -5,10 +5,10 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 [RequireComponent(typeof(Collider))]
-[RequireComponent(typeof(Rigidbody))]
 public class LabSafetyInteractable : MonoBehaviour
 {
     public static event Action<LabSafetyInteractionContext> Activated;
+    public static event Action<LabSafetyInteractionContext> Selected;
 
     [SerializeField] private LabSessionManager sessionManager;
     [SerializeField] private LabSafetyItemType itemType;
@@ -19,22 +19,50 @@ public class LabSafetyInteractable : MonoBehaviour
     [SerializeField] private TMP_Text label;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private XRSimpleInteractable xrInteractable;
+    [SerializeField] private XRGrabInteractable grabInteractable;
+    [SerializeField] private Rigidbody itemRigidbody;
     [SerializeField] private bool moveToSafeReturnOnMistake = true;
+    [SerializeField] private bool grabbable = true;
+    [SerializeField] private bool equippable = true;
 
+    private Collider[] _colliders;
+    private Renderer[] _renderers;
     private Color _baseColor;
     private float _flashUntil;
 
     public LabSafetyItemType ItemType => itemType;
     public LabSafetyItemRole Role => role;
     public LabSafetyZoneType CurrentZone => currentZone;
+    public bool CanGrab => grabbable;
+    public bool IsEquippable => equippable;
+    public bool IsInHotbar { get; private set; }
+
+    public void Configure(
+        LabSessionManager manager,
+        LabSafetyItemType type,
+        LabSafetyItemRole itemRole,
+        LabSafetyZoneType zone)
+    {
+        sessionManager = manager;
+        itemType = type;
+        role = itemRole;
+        currentZone = zone;
+    }
 
     private void Awake()
     {
         sessionManager ??= UnityEngine.Object.FindAnyObjectByType<LabSessionManager>();
         targetRenderer ??= GetComponentInChildren<Renderer>();
         audioSource ??= GetComponent<AudioSource>();
+        if (itemRigidbody == null)
+        {
+            itemRigidbody = GetComponent<Rigidbody>();
+        }
         xrInteractable ??= GetComponent<XRSimpleInteractable>();
-        xrInteractable ??= gameObject.AddComponent<XRSimpleInteractable>();
+        _colliders = GetComponentsInChildren<Collider>(true);
+        _renderers = GetComponentsInChildren<Renderer>(true);
+
+        ConfigurePhysicalGrab();
 
         if (targetRenderer != null)
         {
@@ -44,23 +72,15 @@ public class LabSafetyInteractable : MonoBehaviour
 
     private void OnEnable()
     {
-        if (xrInteractable != null)
-        {
-            xrInteractable.selectEntered.AddListener(OnXrSelectEntered);
-        }
     }
 
     private void OnDisable()
     {
-        if (xrInteractable != null)
-        {
-            xrInteractable.selectEntered.RemoveListener(OnXrSelectEntered);
-        }
     }
 
     private void OnMouseDown()
     {
-        Activate();
+        SelectForAction();
     }
 
     private void Update()
@@ -106,14 +126,120 @@ public class LabSafetyInteractable : MonoBehaviour
         Activated?.Invoke(new LabSafetyInteractionContext(gameObject, itemType, role, currentZone, mistake, feedback));
     }
 
-    private void OnXrSelectEntered(SelectEnterEventArgs args)
+    public void SelectForAction()
     {
-        Activate();
+        sessionManager ??= UnityEngine.Object.FindAnyObjectByType<LabSessionManager>();
+        if (label != null)
+        {
+            label.text = IsEquippable ? "Equipaggia" : "Selezionato";
+        }
+
+        _flashUntil = Time.unscaledTime + 0.20f;
+        Selected?.Invoke(new LabSafetyInteractionContext(gameObject, itemType, role, currentZone, false, "Oggetto selezionato."));
+    }
+
+    public void SetHotbarState(bool inHotbar)
+    {
+        IsInHotbar = inHotbar;
+        _colliders ??= GetComponentsInChildren<Collider>(true);
+        _renderers ??= GetComponentsInChildren<Renderer>(true);
+
+        foreach (var itemCollider in _colliders)
+        {
+            if (itemCollider != null)
+            {
+                itemCollider.enabled = !inHotbar;
+            }
+        }
+
+        foreach (var itemRenderer in _renderers)
+        {
+            if (itemRenderer != null)
+            {
+                itemRenderer.enabled = !inHotbar;
+            }
+        }
+
+        if (itemRigidbody == null)
+        {
+            itemRigidbody = GetComponent<Rigidbody>();
+        }
+        if (itemRigidbody != null)
+        {
+            if (inHotbar)
+            {
+                itemRigidbody.linearVelocity = Vector3.zero;
+                itemRigidbody.angularVelocity = Vector3.zero;
+            }
+
+            itemRigidbody.isKinematic = inHotbar;
+            itemRigidbody.useGravity = !inHotbar;
+        }
+    }
+
+    private void ConfigurePhysicalGrab()
+    {
+        if (xrInteractable != null)
+        {
+            xrInteractable.enabled = false;
+        }
+
+        if (!grabbable)
+        {
+            return;
+        }
+
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        if (itemRigidbody == null)
+        {
+            itemRigidbody = gameObject.AddComponent<Rigidbody>();
+        }
+
+        itemRigidbody.useGravity = true;
+        itemRigidbody.isKinematic = false;
+        if (grabInteractable == null)
+        {
+            grabInteractable = GetComponent<XRGrabInteractable>();
+        }
+
+        if (grabInteractable == null)
+        {
+            grabInteractable = gameObject.AddComponent<XRGrabInteractable>();
+        }
+
+        var interactionManager = ResolveInteractionManager();
+        if (interactionManager != null)
+        {
+            grabInteractable.interactionManager = interactionManager;
+        }
+    }
+
+    private static XRInteractionManager ResolveInteractionManager()
+    {
+        var managers = UnityEngine.Object.FindObjectsByType<XRInteractionManager>(FindObjectsInactive.Exclude);
+        foreach (var manager in managers)
+        {
+            if (manager != null && manager.gameObject.scene.IsValid())
+            {
+                return manager;
+            }
+        }
+
+        return managers.Length > 0 ? managers[0] : null;
     }
 
     private bool ShouldCountAsMistake()
     {
         if (role == LabSafetyItemRole.Ppe)
+        {
+            return false;
+        }
+
+        if (role == LabSafetyItemRole.Neutral)
         {
             return false;
         }
@@ -154,6 +280,7 @@ public class LabSafetyInteractable : MonoBehaviour
         {
             return itemType switch
             {
+                LabSafetyItemType.Package => "Pacco movimentato. Mantieni libero il passaggio e non bloccare il nastro.",
                 LabSafetyItemType.Food => "Cibo lasciato nella zona ristoro. Non portarlo nell'area di lavoro.",
                 _ => "Oggetto riposto correttamente. Continua il percorso.",
             };

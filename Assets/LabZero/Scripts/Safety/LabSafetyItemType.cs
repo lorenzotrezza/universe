@@ -12,4 +12,5 @@ public enum LabSafetyItemType
     HandheldGame = 9,
     Food = 10,
     Beer = 11,
+    Package = 12,
 }

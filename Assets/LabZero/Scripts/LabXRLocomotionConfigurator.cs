@@ -10,6 +10,8 @@ public class LabXRLocomotionConfigurator : MonoBehaviour
     [SerializeField] private bool leftSmoothMotionEnabled = true;
     [SerializeField] private bool rightSmoothMotionEnabled = false;
     [SerializeField] private bool rightSmoothTurnEnabled = true;
+    [SerializeField] private float maxStepOffset = 0.22f;
+    [SerializeField] private float maxSlopeLimit = 42f;
 
     private void OnEnable()
     {
@@ -31,6 +33,7 @@ public class LabXRLocomotionConfigurator : MonoBehaviour
     {
         ConfigureControllerManagers();
         ConfigureMovementDirection();
+        ConfigureCharacterControllers();
     }
 
     private void ConfigureControllerManagers()
@@ -73,6 +76,21 @@ public class LabXRLocomotionConfigurator : MonoBehaviour
 
             moveProvider.leftHandMovementDirection = DynamicMoveProvider.MovementDirection.HeadRelative;
             moveProvider.rightHandMovementDirection = DynamicMoveProvider.MovementDirection.HeadRelative;
+        }
+    }
+
+    private void ConfigureCharacterControllers()
+    {
+        var controllers = Object.FindObjectsByType<CharacterController>(FindObjectsInactive.Include);
+        foreach (var controller in controllers)
+        {
+            if (controller == null)
+            {
+                continue;
+            }
+
+            controller.stepOffset = Mathf.Min(controller.stepOffset, maxStepOffset);
+            controller.slopeLimit = Mathf.Min(controller.slopeLimit, maxSlopeLimit);
         }
     }
 }

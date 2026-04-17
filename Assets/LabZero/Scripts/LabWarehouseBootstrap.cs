@@ -5,7 +5,10 @@ public class LabWarehouseBootstrap : MonoBehaviour
     [SerializeField] private LabSessionSettings settings;
     [SerializeField] private LabSessionManager sessionManager;
     [SerializeField] private GameObject warehouseEnvironmentRoot;
-    [SerializeField] private bool equipPhoneOnStart = true;
+    [SerializeField] private bool addPhoneToHotbarOnStart = true;
+    [SerializeField] private LabHotbarInventory hotbarInventory;
+    [SerializeField] private LabWarehouseHud warehouseHud;
+    [SerializeField] private LabWarehouseInteractionInputRouter interactionInputRouter;
 
     private void Start()
     {
@@ -24,12 +27,43 @@ public class LabWarehouseBootstrap : MonoBehaviour
             sessionManager.StartRun();
         }
 
-        EquipStartingPhone();
+        EnsureInteractionSystems();
+        EnsurePortablePackageInteractables();
+        AddStartingPhoneToHotbar();
     }
 
-    private void EquipStartingPhone()
+    private void EnsureInteractionSystems()
     {
-        if (!equipPhoneOnStart)
+        var viewer = ResolveViewerTransform();
+
+        hotbarInventory ??= Object.FindAnyObjectByType<LabHotbarInventory>();
+        if (hotbarInventory == null)
+        {
+            hotbarInventory = gameObject.AddComponent<LabHotbarInventory>();
+        }
+
+        hotbarInventory.Configure(sessionManager, viewer);
+
+        warehouseHud ??= Object.FindAnyObjectByType<LabWarehouseHud>();
+        if (warehouseHud == null)
+        {
+            warehouseHud = gameObject.AddComponent<LabWarehouseHud>();
+        }
+
+        warehouseHud.Configure(sessionManager, viewer);
+
+        interactionInputRouter ??= Object.FindAnyObjectByType<LabWarehouseInteractionInputRouter>();
+        if (interactionInputRouter == null)
+        {
+            interactionInputRouter = gameObject.AddComponent<LabWarehouseInteractionInputRouter>();
+        }
+
+        interactionInputRouter.Configure(hotbarInventory, viewer);
+    }
+
+    private void AddStartingPhoneToHotbar()
+    {
+        if (!addPhoneToHotbarOnStart)
         {
             return;
         }
@@ -40,24 +74,50 @@ public class LabWarehouseBootstrap : MonoBehaviour
             return;
         }
 
-        var anchor = ResolveEquippedPhoneAnchor();
-        if (anchor == null)
-        {
-            return;
-        }
-
         var distraction = phone.GetComponent<LabEquippedPhoneDistraction>();
         if (distraction == null)
         {
             distraction = phone.gameObject.AddComponent<LabEquippedPhoneDistraction>();
         }
 
-        distraction.Configure(anchor, sessionManager);
+        distraction.ConfigureForHotbar(hotbarInventory, sessionManager);
+        hotbarInventory?.TryEquip(phone);
+    }
+
+    private void EnsurePortablePackageInteractables()
+    {
+        foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
+        {
+            if (go == null || !go.scene.IsValid() || !IsPortablePackageName(go.name))
+            {
+                continue;
+            }
+
+            var collider = go.GetComponentInChildren<Collider>(true);
+            if (collider == null)
+            {
+                collider = go.AddComponent<BoxCollider>();
+            }
+
+            var interactable = go.GetComponent<LabSafetyInteractable>();
+            if (interactable == null)
+            {
+                interactable = go.AddComponent<LabSafetyInteractable>();
+            }
+
+            interactable.Configure(sessionManager, LabSafetyItemType.Package, LabSafetyItemRole.Neutral, LabSafetyZoneType.Sorting);
+        }
+    }
+
+    private static bool IsPortablePackageName(string objectName)
+    {
+        return objectName.StartsWith("Ready Package", System.StringComparison.OrdinalIgnoreCase)
+            || objectName.StartsWith("Sorting Box", System.StringComparison.OrdinalIgnoreCase);
     }
 
     private static LabSafetyInteractable FindPhoneInteractable()
     {
-        var interactables = Object.FindObjectsByType<LabSafetyInteractable>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var interactables = Object.FindObjectsByType<LabSafetyInteractable>(FindObjectsInactive.Include);
         foreach (var interactable in interactables)
         {
             if (interactable != null && interactable.ItemType == LabSafetyItemType.Phone)
@@ -69,42 +129,27 @@ public class LabWarehouseBootstrap : MonoBehaviour
         return null;
     }
 
-    private static Transform ResolveEquippedPhoneAnchor()
+    private static Transform ResolveViewerTransform()
     {
-        var existing = FindSceneObjectIncludingInactive("EquippedPhoneAnchor");
-        if (existing != null)
-        {
-            return existing.transform;
-        }
-
         var camera = Camera.main;
         if (camera == null)
         {
-            camera = Object.FindFirstObjectByType<Camera>();
+            camera = Object.FindAnyObjectByType<Camera>();
         }
 
         if (camera != null)
         {
-            return CreateAnchor(camera.transform, Vector3.zero);
+            return camera.transform;
         }
 
         var rig = FindSceneObjectIncludingInactive("XRRig (Controllers + Hands)");
         if (rig != null)
         {
-            return CreateAnchor(rig.transform, new Vector3(0f, 1.35f, 0.55f));
+            return rig.transform;
         }
 
         var spawnPoint = FindSceneObjectIncludingInactive("SpawnPoint");
-        return spawnPoint != null ? CreateAnchor(spawnPoint.transform, new Vector3(0f, 1.35f, 0.55f)) : null;
-    }
-
-    private static Transform CreateAnchor(Transform parent, Vector3 localPosition)
-    {
-        var anchor = new GameObject("EquippedPhoneAnchor");
-        anchor.transform.SetParent(parent, false);
-        anchor.transform.localPosition = localPosition;
-        anchor.transform.localRotation = Quaternion.identity;
-        return anchor.transform;
+        return spawnPoint != null ? spawnPoint.transform : null;
     }
 
     private static GameObject FindSceneObjectIncludingInactive(string objectName)
