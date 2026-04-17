@@ -8241,6 +8241,56 @@ MonoBehaviour:
   - {fileID: 4719198373437732770, guid: 5dfa0a6e140f943f08287020fef46d43, type: 3}
   - {fileID: -4087115460519140375, guid: 5dfa0a6e140f943f08287020fef46d43, type: 3}
   playbackSpeed: 1
+--- !u!1 &830414731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 830414733}
+  - component: {fileID: 830414732}
+  m_Layer: 0
+  m_Name: Lab XR Locomotion Configurator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &830414732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830414731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9a6738e0292344b294f430900a4ee7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LabXRLocomotionConfigurator
+  configureOnEnable: 1
+  configureOnStart: 1
+  useHeadRelativeMovement: 1
+  leftSmoothMotionEnabled: 1
+  rightSmoothMotionEnabled: 0
+  rightSmoothTurnEnabled: 1
+--- !u!4 &830414733
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830414731}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &847186255
 GameObject:
   m_ObjectHideFlags: 0
@@ -97163,3 +97213,4 @@ SceneRoots:
   - {fileID: 152787518}
   - {fileID: 1224571914}
   - {fileID: 281712734}
+  - {fileID: 830414733}
