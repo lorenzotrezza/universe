@@ -108,6 +108,22 @@ public class LabGuideDirector : MonoBehaviour
         return _mistakeLog;
     }
 
+    public bool TryGetActiveTarget(out LabGuideTargetKind targetKind, out string targetId)
+    {
+        targetKind = LabGuideTargetKind.Area;
+        targetId = null;
+
+        if (!HasActiveStep())
+        {
+            return false;
+        }
+
+        var step = lessonDefinition.Steps[ActiveStepIndex];
+        targetKind = step.TargetKind;
+        targetId = step.TargetId;
+        return !string.IsNullOrWhiteSpace(targetId);
+    }
+
     public void AdvanceReminderForTests(float elapsedSeconds)
     {
         if (Mode != LabGuideMode.Guided || !HasActiveStep())

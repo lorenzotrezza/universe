@@ -82,9 +82,7 @@ public class LabGuideWarehouseFlowTests
         var settings = GetProperty(sessionManager, "Settings") as ScriptableObject;
         if (settings == null)
         {
-            var settingsType = Type.GetType("LabSessionSettings, Assembly-CSharp");
-            Assert.IsNotNull(settingsType, "LabSessionSettings type was not found.");
-            settings = ScriptableObject.CreateInstance(settingsType);
+            settings = ScriptableObject.CreateInstance(RequireType("LabSessionSettings"));
             Invoke(sessionManager, "Initialize", settings);
         }
 
@@ -111,8 +109,7 @@ public class LabGuideWarehouseFlowTests
 
     private static Component FindOnlySceneComponent(string typeName)
     {
-        var type = Type.GetType(typeName + ", Assembly-CSharp");
-        Assert.IsNotNull(type, typeName + " type was not found in Assembly-CSharp.");
+        var type = RequireType(typeName);
 
         var components = Resources
             .FindObjectsOfTypeAll<Component>()
@@ -133,8 +130,7 @@ public class LabGuideWarehouseFlowTests
 
     private static Component[] FindSceneComponents(string typeName)
     {
-        var type = Type.GetType(typeName + ", Assembly-CSharp");
-        Assert.IsNotNull(type, typeName + " type was not found in Assembly-CSharp.");
+        var type = RequireType(typeName);
 
         return Resources
             .FindObjectsOfTypeAll<Component>()
@@ -216,6 +212,13 @@ public class LabGuideWarehouseFlowTests
         var property = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
         Assert.IsNotNull(property, "Expected public property '" + propertyName + "' was not found.");
         return property.GetValue(target);
+    }
+
+    private static Type RequireType(string typeName)
+    {
+        var type = Type.GetType(typeName + ", Assembly-CSharp");
+        Assert.IsNotNull(type, typeName + " type was not found in Assembly-CSharp.");
+        return type;
     }
 
     private static void SetField(Type type, object target, string fieldName, object value)

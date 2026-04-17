@@ -27,6 +27,8 @@ public class LabGuideRobotPresenter : MonoBehaviour
 
     public LabGuidePromptBubbleView PromptBubble => promptBubble;
     public LabGuideStatusLineView StatusLine => statusLine;
+    public Transform FocusTarget => _focusTarget;
+    public bool OrientationOnlyFocus => _orientationOnly;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterSceneLoadedHook()
@@ -334,10 +336,34 @@ public class LabGuideRobotPresenter : MonoBehaviour
         }
 
         director.BindPresentation(presenter.PromptBubble, presenter.StatusLine);
+        EnsureGuideTargetCues(root, director, presenter);
         if (Application.isPlaying)
         {
             director.BeginLesson();
         }
+    }
+
+    private static void EnsureGuideTargetCues(Transform root, LabGuideDirector director, LabGuideRobotPresenter presenter)
+    {
+        var registry = Object.FindAnyObjectByType<LabGuideTargetRegistry>();
+        if (registry == null)
+        {
+            var registryGo = new GameObject("GuideTargetRegistry");
+            registryGo.transform.SetParent(root, false);
+            registry = registryGo.AddComponent<LabGuideTargetRegistry>();
+        }
+
+        registry.EnsureDefaultWarehouseTargets(root);
+
+        var cueService = Object.FindAnyObjectByType<LabGuideTargetCueService>();
+        if (cueService == null)
+        {
+            var cueGo = new GameObject("GuideTargetCueService");
+            cueGo.transform.SetParent(root, false);
+            cueService = cueGo.AddComponent<LabGuideTargetCueService>();
+        }
+
+        cueService.Bind(director, registry, presenter, Object.FindAnyObjectByType<LabSessionManager>());
     }
 
     private static TMP_Text CreateWorldText(
