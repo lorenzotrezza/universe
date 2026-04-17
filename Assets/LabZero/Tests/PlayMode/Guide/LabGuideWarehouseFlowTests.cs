@@ -58,6 +58,44 @@ public class LabGuideWarehouseFlowTests
         Assert.AreNotEqual(bubble.gameObject, statusLine.gameObject, "Status line must not replace or hide the guide bubble.");
     }
 
+    [UnityTest]
+    public IEnumerator GUID_04_WarehouseRegistersObjectAndAreaTargets()
+    {
+        yield return LoadWarehouseScene();
+
+        var registry = FindOnlySceneComponent("LabGuideTargetRegistry");
+
+        AssertResolve(registry, "postazione_dpi", "Object");
+        AssertResolve(registry, "passaggio_operativo", "Area");
+    }
+
+    [UnityTest]
+    public IEnumerator GUID_04_HelperOff_RobotOrientsWithoutStrongGlow()
+    {
+        yield return LoadWarehouseScene();
+
+        var service = FindOnlySceneComponent("LabGuideTargetCueService");
+        var presenter = FindOnlySceneComponent("LabGuideRobotPresenter");
+        var sessionManager = FindFirstSceneComponent("LabSessionManager");
+        Assert.IsNotNull(sessionManager, "Warehouse scene should expose a LabSessionManager for helper settings.");
+
+        var settings = GetProperty(sessionManager, "Settings") as ScriptableObject;
+        if (settings == null)
+        {
+            var settingsType = Type.GetType("LabSessionSettings, Assembly-CSharp");
+            Assert.IsNotNull(settingsType, "LabSessionSettings type was not found.");
+            settings = ScriptableObject.CreateInstance(settingsType);
+            Invoke(sessionManager, "Initialize", settings);
+        }
+
+        SetField(settings.GetType(), settings, "HelpersEnabled", false);
+        Invoke(service, "RefreshCurrentTarget");
+
+        Assert.IsFalse((bool)GetProperty(service, "StrongCueActive"));
+        Assert.IsNotNull(GetProperty(presenter, "FocusTarget"));
+        Assert.IsTrue((bool)GetProperty(presenter, "OrientationOnlyFocus"));
+    }
+
     private static IEnumerator LoadWarehouseScene()
     {
         SceneManager.LoadScene("LabWarehouse", LoadSceneMode.Single);
@@ -86,6 +124,25 @@ public class LabGuideWarehouseFlowTests
 
         Assert.AreEqual(1, components.Length, "Expected exactly one active scene component of type " + typeName + ".");
         return components[0];
+    }
+
+    private static Component FindFirstSceneComponent(string typeName)
+    {
+        return FindSceneComponents(typeName).FirstOrDefault();
+    }
+
+    private static Component[] FindSceneComponents(string typeName)
+    {
+        var type = Type.GetType(typeName + ", Assembly-CSharp");
+        Assert.IsNotNull(type, typeName + " type was not found in Assembly-CSharp.");
+
+        return Resources
+            .FindObjectsOfTypeAll<Component>()
+            .Where(component => component != null)
+            .Where(component => component.GetType() == type)
+            .Where(component => component.gameObject.scene.IsValid())
+            .Where(component => component.gameObject.activeInHierarchy)
+            .ToArray();
     }
 
     private static Transform ResolveLearnerAnchor()
@@ -136,5 +193,35 @@ public class LabGuideWarehouseFlowTests
     {
         var textProperty = component.GetType().GetProperty("text", BindingFlags.Public | BindingFlags.Instance);
         return textProperty?.GetValue(component) as string;
+    }
+
+    private static void AssertResolve(Component registry, string targetId, string expectedKind)
+    {
+        var args = new object[] { targetId, null };
+        var resolved = (bool)registry.GetType().GetMethod("TryResolve").Invoke(registry, args);
+        Assert.IsTrue(resolved, "Target '" + targetId + "' should resolve.");
+        Assert.AreEqual(expectedKind, GetProperty(args[1], "Kind").ToString());
+        Assert.IsNotNull(GetProperty(args[1], "FocusTransform"));
+    }
+
+    private static object Invoke(Component target, string methodName, params object[] args)
+    {
+        var method = target.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.IsNotNull(method, "Expected public method '" + methodName + "' was not found.");
+        return method.Invoke(target, args);
+    }
+
+    private static object GetProperty(object target, string propertyName)
+    {
+        var property = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.IsNotNull(property, "Expected public property '" + propertyName + "' was not found.");
+        return property.GetValue(target);
+    }
+
+    private static void SetField(Type type, object target, string fieldName, object value)
+    {
+        var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.IsNotNull(field, "Expected public field '" + fieldName + "' was not found.");
+        field.SetValue(target, value);
     }
 }
