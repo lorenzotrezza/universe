@@ -7,6 +7,7 @@ public class LabGuidePromptBubbleView : MonoBehaviour
 
     [SerializeField] private TMP_Text promptText;
     [SerializeField] private string defaultPrompt = StartupGreeting;
+    [SerializeField] private bool faceLearnerCamera = true;
 
     public string CurrentText { get; private set; }
 
@@ -39,6 +40,31 @@ public class LabGuidePromptBubbleView : MonoBehaviour
             promptText.color = severity == LabGuidePromptSeverity.Warning
                 ? new Color(1f, 0.72f, 0.28f, 1f)
                 : Color.white;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!faceLearnerCamera)
+        {
+            return;
+        }
+
+        var camera = Camera.main;
+        if (camera == null)
+        {
+            camera = Object.FindFirstObjectByType<Camera>();
+        }
+
+        if (camera == null)
+        {
+            return;
+        }
+
+        var direction = transform.position - camera.transform.position;
+        if (direction.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
     }
 

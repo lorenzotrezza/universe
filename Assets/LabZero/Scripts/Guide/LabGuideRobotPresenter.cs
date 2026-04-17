@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class LabGuideRobotPresenter : MonoBehaviour
 {
@@ -259,15 +260,24 @@ public class LabGuideRobotPresenter : MonoBehaviour
 
     private static LabGuidePromptBubbleView BuildPromptBubble(Transform parent)
     {
-        var bubbleGo = new GameObject("GuidePromptBubble");
+        var bubbleGo = new GameObject("GuidePromptBubble", typeof(RectTransform), typeof(Canvas), typeof(Image));
         bubbleGo.transform.SetParent(parent, false);
-        bubbleGo.transform.localPosition = new Vector3(0.46f, 0.12f, 0f);
-        bubbleGo.transform.localRotation = Quaternion.Euler(0f, 16f, 0f);
-        bubbleGo.transform.localScale = Vector3.one;
+        bubbleGo.transform.localPosition = new Vector3(0.54f, 0.02f, 0f);
+        bubbleGo.transform.localRotation = Quaternion.identity;
+        bubbleGo.transform.localScale = Vector3.one * 0.002f;
 
-        var panelMaterial = CreateGuideMaterial("Guide Bubble Panel", new Color(0.02f, 0.07f, 0.09f, 0.92f));
-        CreatePrimitive(bubbleGo.transform, "Bubble Panel", PrimitiveType.Cube, new Vector3(0f, 0f, 0.01f), new Vector3(0.92f, 0.28f, 0.03f), panelMaterial);
-        var text = CreateText(bubbleGo.transform, "Bubble Text", new Vector3(-0.42f, 0.04f, -0.015f), 0.055f, 8f);
+        var canvas = bubbleGo.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.worldCamera = Camera.main;
+        canvas.sortingOrder = 30;
+
+        var rect = bubbleGo.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(360f, 112f);
+
+        var image = bubbleGo.GetComponent<Image>();
+        image.color = new Color(0.02f, 0.07f, 0.09f, 0.86f);
+
+        var text = CreateWorldText(bubbleGo.transform, "Bubble Text", 24f, TextAlignmentOptions.Left, new Vector2(28f, 14f), new Vector2(-28f, -14f));
         var view = bubbleGo.AddComponent<LabGuidePromptBubbleView>();
         view.Bind(text);
         return view;
@@ -275,31 +285,56 @@ public class LabGuideRobotPresenter : MonoBehaviour
 
     private static LabGuideStatusLineView BuildStatusLine(Transform parent)
     {
-        var statusGo = new GameObject("GuideStatusLine");
+        var statusGo = new GameObject("GuideStatusLine", typeof(RectTransform), typeof(Canvas), typeof(Image));
         statusGo.transform.SetParent(parent, false);
-        statusGo.transform.localPosition = new Vector3(0.22f, -0.08f, 0f);
-        statusGo.transform.localRotation = Quaternion.Euler(0f, 12f, 0f);
+        statusGo.transform.localPosition = new Vector3(0.30f, -0.08f, -0.02f);
+        statusGo.transform.localRotation = Quaternion.identity;
+        statusGo.transform.localScale = Vector3.one * 0.002f;
 
-        var text = CreateText(statusGo.transform, "Status Text", Vector3.zero, 0.04f, 6.5f);
+        var canvas = statusGo.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.worldCamera = Camera.main;
+        canvas.sortingOrder = 29;
+
+        var rect = statusGo.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(330f, 36f);
+
+        var image = statusGo.GetComponent<Image>();
+        image.color = new Color(0.02f, 0.07f, 0.09f, 0f);
+
+        var text = CreateWorldText(statusGo.transform, "Status Text", 18f, TextAlignmentOptions.Center, new Vector2(12f, 4f), new Vector2(-12f, -4f));
         text.color = new Color(0.70f, 0.95f, 0.88f, 1f);
         var view = statusGo.AddComponent<LabGuideStatusLineView>();
         view.Bind(text);
         return view;
     }
 
-    private static TextMeshPro CreateText(Transform parent, string name, Vector3 localPosition, float fontSize, float width)
+    private static TMP_Text CreateWorldText(
+        Transform parent,
+        string name,
+        float fontSize,
+        TextAlignmentOptions alignment,
+        Vector2 offsetMin,
+        Vector2 offsetMax)
     {
-        var textGo = new GameObject(name);
+        var textGo = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
         textGo.transform.SetParent(parent, false);
-        textGo.transform.localPosition = localPosition;
         textGo.transform.localRotation = Quaternion.identity;
         textGo.transform.localScale = Vector3.one;
 
-        var text = textGo.AddComponent<TextMeshPro>();
-        text.alignment = TextAlignmentOptions.Left;
+        var rect = textGo.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+
+        var text = textGo.GetComponent<TextMeshProUGUI>();
+        text.alignment = alignment;
         text.fontSize = fontSize;
         text.enableWordWrapping = true;
-        text.rectTransform.sizeDelta = new Vector2(width, 1f);
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        text.raycastTarget = false;
+        text.color = Color.white;
         text.text = string.Empty;
         return text;
     }

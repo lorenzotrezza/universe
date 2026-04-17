@@ -7,6 +7,7 @@ public class LabGuideStatusLineView : MonoBehaviour
 
     [SerializeField] private TMP_Text statusText;
     [SerializeField] private string defaultStatus = "Obiettivo: segui la guida iniziale in sicurezza.";
+    [SerializeField] private bool faceLearnerCamera = true;
 
     public string CurrentText { get; private set; }
 
@@ -48,6 +49,31 @@ public class LabGuideStatusLineView : MonoBehaviour
         }
 
         return singleLine.Substring(0, MaxVisibleCharacters - 3).TrimEnd() + "...";
+    }
+
+    private void LateUpdate()
+    {
+        if (!faceLearnerCamera)
+        {
+            return;
+        }
+
+        var camera = Camera.main;
+        if (camera == null)
+        {
+            camera = Object.FindFirstObjectByType<Camera>();
+        }
+
+        if (camera == null)
+        {
+            return;
+        }
+
+        var direction = transform.position - camera.transform.position;
+        if (direction.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
     }
 
     private void EnsureText()
