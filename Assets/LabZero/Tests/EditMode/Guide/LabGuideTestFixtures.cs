@@ -17,6 +17,15 @@ public static class LabGuideTestFixtures
         "chiusura_guidata",
     };
 
+    public static readonly string[] ObjectiveStarts =
+    {
+        "Segui",
+        "Raggiungi",
+        "Controlla",
+        "Rimuovi",
+        "Conferma",
+    };
+
     public static ScriptableObject CreateLesson()
     {
         var lessonType = RequireType("LabGuideLessonDefinition");
@@ -54,6 +63,9 @@ public static class LabGuideTestFixtures
         var serialized = new SerializedObject(coach);
         serialized.FindProperty("director").objectReferenceValue = director;
         serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        var onEnable = coachType.GetMethod("OnEnable", BindingFlags.NonPublic | BindingFlags.Instance);
+        onEnable?.Invoke(coach, null);
     }
 
     public static PromptCapture SubscribePromptChanged(Component director)
@@ -113,6 +125,11 @@ public static class LabGuideTestFixtures
         }
     }
 
+    public static void AdvanceReminderForTests(Component director, float elapsedSeconds)
+    {
+        Invoke(director, "AdvanceReminderForTests", elapsedSeconds);
+    }
+
     public static T GetProperty<T>(object target, string propertyName)
     {
         var property = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
@@ -123,8 +140,14 @@ public static class LabGuideTestFixtures
     public static object GetObjectProperty(object target, string propertyName)
     {
         var property = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-        Assert.IsNotNull(property, "Expected property '" + propertyName + "' was not found.");
-        return property.GetValue(target);
+        if (property != null)
+        {
+            return property.GetValue(target);
+        }
+
+        var field = target.GetType().GetField(propertyName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.IsNotNull(field, "Expected property or field '" + propertyName + "' was not found.");
+        return field.GetValue(target);
     }
 
     private static Type RequireType(string typeName)

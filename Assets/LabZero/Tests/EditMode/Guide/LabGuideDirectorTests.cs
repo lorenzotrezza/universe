@@ -28,7 +28,9 @@ public class LabGuideDirectorTests
             {
                 Assert.IsTrue(LabGuideTestFixtures.TryReportCondition(director, LabGuideTestFixtures.SignalIds[i]));
                 Assert.AreEqual(i + 1, LabGuideTestFixtures.ActiveStepIndex(director));
-                Assert.That(capture.Prompts[capture.Prompts.Count - 1], Does.Contain(LabGuideTestFixtures.SignalIds[i + 1].Replace("_", " ").Split(' ')[0]));
+                Assert.That(
+                    capture.Prompts[capture.Prompts.Count - 1],
+                    Does.Contain(LabGuideTestFixtures.ObjectiveStarts[i + 1]).IgnoreCase);
             }
 
             Assert.IsTrue(LabGuideTestFixtures.TryReportCondition(director, LabGuideTestFixtures.SignalIds[^1]));
@@ -79,7 +81,8 @@ public class LabGuideDirectorTests
         {
             LabGuideTestFixtures.BeginLesson(director);
 
-            yield return new WaitForSecondsRealtime(0.07f);
+            LabGuideTestFixtures.AdvanceReminderForTests(director, 0.07f);
+            yield return null;
 
             Assert.That(capture.Severities, Does.Contain("Hint"));
             Assert.That(capture.Severities, Does.Contain("Warning"));

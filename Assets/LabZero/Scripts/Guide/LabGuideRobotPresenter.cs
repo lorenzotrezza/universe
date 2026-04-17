@@ -25,6 +25,9 @@ public class LabGuideRobotPresenter : MonoBehaviour
     private Transform _focusTarget;
     private bool _orientationOnly;
 
+    public LabGuidePromptBubbleView PromptBubble => promptBubble;
+    public LabGuideStatusLineView StatusLine => statusLine;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterSceneLoadedHook()
     {
@@ -98,21 +101,24 @@ public class LabGuideRobotPresenter : MonoBehaviour
             return null;
         }
 
-        var existing = GameObject.Find(GuideDroneName);
-        if (existing != null && existing.GetComponent<LabGuideRobotPresenter>() != null)
-        {
-            return existing;
-        }
-
         var root = GameObject.Find(GuideRootName);
         if (root == null)
         {
             root = new GameObject(GuideRootName);
         }
 
+        var existing = GameObject.Find(GuideDroneName);
+        if (existing != null && existing.TryGetComponent(out LabGuideRobotPresenter existingPresenter))
+        {
+            EnsureGuideDirector(root.transform, existingPresenter);
+            return existing;
+        }
+
         var learner = ResolveBestLearnerAnchor();
         var startPosition = ResolveStartPosition(learner);
-        return CreateGuideDrone(root.transform, learner, startPosition);
+        var drone = CreateGuideDrone(root.transform, learner, startPosition);
+        EnsureGuideDirector(root.transform, drone.GetComponent<LabGuideRobotPresenter>());
+        return drone;
     }
 
     public static GameObject CreateGuideDrone(Transform parent, Transform learner, Vector3 startPosition)
@@ -307,6 +313,31 @@ public class LabGuideRobotPresenter : MonoBehaviour
         var view = statusGo.AddComponent<LabGuideStatusLineView>();
         view.Bind(text);
         return view;
+    }
+
+    private static void EnsureGuideDirector(Transform root, LabGuideRobotPresenter presenter)
+    {
+        if (root == null || presenter == null)
+        {
+            return;
+        }
+
+        var director = Object.FindAnyObjectByType<LabGuideDirector>();
+        if (director == null)
+        {
+            var directorGo = new GameObject("GuideDirector");
+            directorGo.transform.SetParent(root, false);
+            director = directorGo.AddComponent<LabGuideDirector>();
+            var coach = directorGo.AddComponent<LabGuideFreeRoamCoach>();
+            directorGo.AddComponent<LabGuideDebugBridge>();
+            coach.Bind(director);
+        }
+
+        director.BindPresentation(presenter.PromptBubble, presenter.StatusLine);
+        if (Application.isPlaying)
+        {
+            director.BeginLesson();
+        }
     }
 
     private static TMP_Text CreateWorldText(
