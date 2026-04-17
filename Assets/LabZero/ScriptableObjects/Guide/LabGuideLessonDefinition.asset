@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d817c5cdba1244b7a35ab4d7e75390e, type: 3}
+  m_Name: LabGuideLessonDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::LabGuideLessonDefinition
+  Steps:
+  - StepId: guide_intro
+    ObjectiveItalian: Segui la guida e resta nell'area sicura.
+    SafetyReasonItalian: Ti orienta prima di entrare tra macchine e passaggi.
+    RequiredSignalId: guide_intro
+    TargetId: area_sicura_intro
+    TargetKind: 1
+    HintDelaySeconds: 20
+    WarningDelaySeconds: 45
+    ExpectedDurationSeconds: 20
+  - StepId: raggiungi_area_controllo
+    ObjectiveItalian: Raggiungi il punto di controllo prima di operare.
+    SafetyReasonItalian: Da qui verifichi l'ambiente senza esporti al traffico interno.
+    RequiredSignalId: raggiungi_area_controllo
+    TargetId: punto_controllo
+    TargetKind: 1
+    HintDelaySeconds: 20
+    WarningDelaySeconds: 45
+    ExpectedDurationSeconds: 30
+  - StepId: interagisci_postazione_dpi
+    ObjectiveItalian: Controlla la postazione DPI prima di entrare.
+    SafetyReasonItalian: Casco, occhiali e guanti riducono i rischi vicino ai macchinari.
+    RequiredSignalId: interagisci_postazione_dpi
+    TargetId: postazione_dpi
+    TargetKind: 0
+    HintDelaySeconds: 20
+    WarningDelaySeconds: 45
+    ExpectedDurationSeconds: 35
+  - StepId: metti_in_sicurezza_passaggio
+    ObjectiveItalian: Rimuovi l'ostacolo dal passaggio operativo.
+    SafetyReasonItalian: Un corridoio libero evita inciampi e collisioni durante
+      la movimentazione.
+    RequiredSignalId: metti_in_sicurezza_passaggio
+    TargetId: passaggio_operativo
+    TargetKind: 1
+    HintDelaySeconds: 20
+    WarningDelaySeconds: 45
+    ExpectedDurationSeconds: 35
+  - StepId: chiusura_guidata
+    ObjectiveItalian: Conferma il percorso sicuro completato.
+    SafetyReasonItalian: Chiudere il controllo fissa le azioni corrette prima della
+      libera esplorazione.
+    RequiredSignalId: chiusura_guidata
+    TargetId: uscita_sicura
+    TargetKind: 1
+    HintDelaySeconds: 20
+    WarningDelaySeconds: 45
+    ExpectedDurationSeconds: 30
