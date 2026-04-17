@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -6,6 +7,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 [RequireComponent(typeof(Collider))]
 public class LabSafetyInteractable : MonoBehaviour
 {
+    public static event Action<LabSafetyInteractionContext> Activated;
+
     [SerializeField] private LabSessionManager sessionManager;
     [SerializeField] private LabSafetyItemType itemType;
     [SerializeField] private LabSafetyItemRole role;
@@ -20,9 +23,13 @@ public class LabSafetyInteractable : MonoBehaviour
     private Color _baseColor;
     private float _flashUntil;
 
+    public LabSafetyItemType ItemType => itemType;
+    public LabSafetyItemRole Role => role;
+    public LabSafetyZoneType CurrentZone => currentZone;
+
     private void Awake()
     {
-        sessionManager ??= Object.FindAnyObjectByType<LabSessionManager>();
+        sessionManager ??= UnityEngine.Object.FindAnyObjectByType<LabSessionManager>();
         targetRenderer ??= GetComponentInChildren<Renderer>();
         audioSource ??= GetComponent<AudioSource>();
         xrInteractable ??= GetComponent<XRSimpleInteractable>();
@@ -70,7 +77,7 @@ public class LabSafetyInteractable : MonoBehaviour
 
     public void Activate()
     {
-        sessionManager ??= Object.FindAnyObjectByType<LabSessionManager>();
+        sessionManager ??= UnityEngine.Object.FindAnyObjectByType<LabSessionManager>();
         var mistake = ShouldCountAsMistake();
         var feedback = BuildFeedback(mistake);
         if (audioSource != null)
@@ -94,6 +101,8 @@ public class LabSafetyInteractable : MonoBehaviour
         {
             transform.SetPositionAndRotation(safeReturnPoint.position, safeReturnPoint.rotation);
         }
+
+        Activated?.Invoke(new LabSafetyInteractionContext(gameObject, itemType, role, currentZone, mistake, feedback));
     }
 
     private void OnXrSelectEntered(SelectEnterEventArgs args)
